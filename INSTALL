@@ -1,0 +1,47 @@
+                  w2do - a simple text-based todo manager
+                         installation instructions
+
+
+Copyright (C) 2008 Jaromir Hradilek
+
+Permission is granted to copy, distribute and/or modify this document under
+the terms of the  GNU Free Documentation License,  Version 1.2 or any later
+version  published  by  the  Free Software Foundation;  with  no  Invariant
+Sections, no Front-Cover Texts, and no Back-Cover Texts.
+
+A copy of the license  is included as a file called FDL  in the main direc-
+tory of the w2do source package.
+
+
+1. General System Requirements
+
+w2do is a single file written in Perl 5 and as such,  it should be platform
+independent. However, working installation of Perl 5 is required to run the
+application. If you are using one of the Un*x-like operating systems, it is
+probable that you have it already installed.  If you are using Windows, you
+can obtain it from  http://www.activestate.com/Products/activeperl/ free of
+charge.
+
+
+2. Installing on Un*x Systems
+
+If you are using one of the Un*x-like operating systems, the easiest way to
+install w2do is to use existing Makefile.  Just get into the main directory
+of the w2do source package and, as a root, type:
+
+  make install
+
+This will install runnable script file to the predefined /usr/local/bin and
+appropriate man page  to the  /usr/local/share/man/man1.  Other destination
+can be easily set by changing the value of `prefix' in the Makefile.
+
+
+3. Installing on Windows
+
+No installation is needed. In your favourite command line interpreter (e.g.
+cmd.exe),  just get into the main directory  of the w2do source package and
+simply run w2do as any other Perl script:
+
+  perl w2do
+
+Type `perl w2do --help' for usage information.
