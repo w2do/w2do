@@ -27,6 +27,8 @@ man1dir = $(mandir)/man1
 
 # Make rules;  please do not edit these unless you really know what you are
 # doing:
+.PHONY: all install uninstall
+
 all:
 	@echo "Type \`make install' to perform installation."
 
