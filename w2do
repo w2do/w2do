@@ -18,6 +18,7 @@
 use strict;
 use warnings;
 use locale;
+use Text::Wrap;
 use File::Copy;
 use File::Basename;
 use File::Spec::Functions;
@@ -25,7 +26,7 @@ use Getopt::Long;
 
 # General script information:
 our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.0.0';                          # Script version.
+our $VERSION   = '2.0.1';                          # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE};  # User's home directory.
@@ -33,7 +34,9 @@ our $SAVENAME  = ".$NAME";                         # Save file name.
 our $savefile  = catfile($HOMEDIR, $SAVENAME);     # Save file location.
 our $backext   = '.bak';                           # Backup file extension.
 our $verbose   = 1;                                # Verbosity level (0-1).
-our $width     = 75;                               # Table width.
+
+# Appearance settings:
+$Text::Wrap::columns = 75;                         # Table width.
 
 # Command line options:
 my $action     = 0;
@@ -97,6 +100,7 @@ Specifying options:
 Additional options:
 
   -F, --file file          use selected file instead of default ~/$SAVENAME
+  -w, --width width        specify the line width; the minimal value is 75
   -q, --quiet              do not display messages that are not necessary
 END_HELP
 }
@@ -160,17 +164,22 @@ sub display_statistics {
 
 # Display items in the task list:
 sub display_tasks {
-  my $args    = shift;
-  my $group   = '';
-  my (@data, $date);
+  my $args = shift;
+  my @data;
 
   load_selection(\@data, undef, $args);
 
   if (@data) {
-    my $divider = '-'x $width . "\n";
-    my $border  = '='x $width . "\n";
+    my $divider = '-'x $Text::Wrap::columns . "\n";
+    my $border  = '='x $Text::Wrap::columns . "\n";
     my $caption = " id    group       date        pri  sta  task\n";
     my $format  = " %-4s  %-10s  %-10s   %s    %s   %s\n";
+    my $indent  = ' 'x 41;
+
+    my $group   = '';
+    my ($id, $date, $priority, $state, $task);
+
+    $Text::Wrap::columns++;
 
     print $border, $caption, $border;
 
@@ -179,7 +188,7 @@ sub display_tasks {
 
       if ($1 ne $group) {
         print $divider if $group;
-        $group = $1;
+        $group  = $1;
       }
 
       if ($2 eq date_to_string(time)) { $date = 'today'; }
@@ -187,7 +196,12 @@ sub display_tasks {
       elsif ($2 eq date_to_string(time + 86400)) { $date = 'tomorrow';  }
       else { $date = $2; }
 
-      printf($format, $6, $1, $date, $3, (($4 eq 'f') ? '-' : 'f'), $5);
+      $id       = $6;
+      $priority = $3;
+      $state    = ($4 eq 'f') ? '-' : 'f';
+      $task     =  wrap($indent, $indent, $5); $task =~ s/\s+//;
+
+      printf($format, $id, $group, $date, $priority, $state, $task);
     }
   }
   else {
@@ -562,9 +576,10 @@ GetOptions(
   'unfinished|u'   => sub { $args{state}    = 'f' },
 
   # Additional options:
-  'quiet|q'        => sub { $verbose        = 0 },
-  'verbose|V'      => sub { $verbose        = 1 },
-  'file|F=s'       => sub { $savefile       = $_[1] },
+  'quiet|q'        => sub { $verbose             = 0 },
+  'verbose|V'      => sub { $verbose             = 1 },
+  'file|F=s'       => sub { $savefile            = $_[1] },
+  'width|w=i'      => sub { $Text::Wrap::columns = $_[1] },
 
   # General options:
   'list|l'         => sub { $action = 0 },
@@ -616,6 +631,11 @@ if (my $value = $args{priority}) {
   unless ($value =~ /^[1-5]$/) {
     exitWithError("Invalid priority `$value'.", 22);
   }
+}
+
+# Check line width option:
+if ($Text::Wrap::columns < 75) {
+  exitWithError("Invalid line width `$Text::Wrap::columns'.", 22);
 }
 
 # Perform appropriate action:
