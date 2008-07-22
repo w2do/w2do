@@ -26,7 +26,7 @@ use Getopt::Long;
 
 # General script information:
 our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.0.1';                          # Script version.
+our $VERSION   = '2.0.3';                          # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE};  # User's home directory.
@@ -39,12 +39,13 @@ our $verbose   = 1;                                # Verbosity level (0-1).
 $Text::Wrap::columns = 75;                         # Table width.
 
 # Command line options:
-my $action     = 0;
+my $action     = 0;                                # Default action.
+my $outfile    = '';                               # Output file.
 my ($identifier, %args);
 
 # Signal handlers:
 $SIG{__WARN__} = sub { 
-  exitWithError((shift) . "Try `--help' for more information.", 22);
+  exit_with_error((shift) . "Try `--help' for more information.", 22);
 };
 
 # Display script usage:
@@ -99,6 +100,7 @@ Specifying options:
 
 Additional options:
 
+  -o, --output file        write items to the selected file
   -F, --file file          use selected file instead of default ~/$SAVENAME
   -w, --width width        specify the line width; the minimal value is 75
   -q, --quiet              do not display messages that are not necessary
@@ -202,6 +204,42 @@ sub display_tasks {
       $task     =  wrap($indent, $indent, $5); $task =~ s/\s+//;
 
       printf($format, $id, $group, $date, $priority, $state, $task);
+    }
+  }
+  else {
+    print "No matching task found.\n" if $verbose;
+  }
+}
+
+# Write items in the task list to the selected file:
+sub dump_tasks {
+  my ($outfile, $args) = @_;
+  my @data;
+
+  load_selection(\@data, undef, $args);
+
+  if (@data) {
+    if (open(SAVEFILE, ">$outfile")) {
+      my ($group, $task) = '';
+      
+      foreach my $line (sort @data) {
+        $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
+
+        if ($1 ne $group) {
+          print SAVEFILE "\n" if $group;
+          print SAVEFILE "$1:\n\n";
+          $group = $1;
+        }
+
+        $task = ($4 eq 't') ? "$5 (done)\n" : "$5\n";
+        print SAVEFILE wrap('  * ', '    ', $task);
+      }
+
+      close(SAVEFILE);
+      print "Tasks have been successfully written.\n" if $verbose;
+    }
+    else {
+      exitWithError("Unable to write to `$outfile'.", 13);
     }
   }
   else {
@@ -376,7 +414,7 @@ sub translate_date {
   elsif ($date eq 'tomorrow')  { return date_to_string(time + 86400) }
   elsif ($date eq 'month')     { return date_to_string(time + 2678400)  }
   elsif ($date eq 'year')      { return date_to_string(time + 31536000) }
-  else  { exitWithError("Invalid due date `$date'.", 22) }
+  else  { exit_with_error("Invalid due date `$date'.", 22) }
 }
 
 # Change selected items in the task list:
@@ -504,7 +542,7 @@ sub save_data {
     close(SAVEFILE);
   }
   else {
-    exitWithError("Unable to write to `$savefile'.", 13);
+    exit_with_error("Unable to write to `$savefile'.", 13);
   }
 }
 
@@ -523,7 +561,7 @@ sub add_data {
     close(SAVEFILE);
   }
   else {
-    exitWithError("Unable to write to `$savefile'.", 13);
+    exit_with_error("Unable to write to `$savefile'.", 13);
   }
 }
 
@@ -554,7 +592,7 @@ sub date_to_string {
 }
 
 # Display given message and immediately terminate the script:
-sub exitWithError {
+sub exit_with_error {
   my $message = shift || 'An unspecified error has occured.';
   my $retval  = shift || 1;
 
@@ -578,6 +616,7 @@ GetOptions(
   # Additional options:
   'quiet|q'        => sub { $verbose             = 0 },
   'verbose|V'      => sub { $verbose             = 1 },
+  'output|o=s'     => sub { $outfile             = $_[1] },
   'file|F=s'       => sub { $savefile            = $_[1] },
   'width|w=i'      => sub { $Text::Wrap::columns = $_[1] },
 
@@ -629,17 +668,19 @@ if ($action >= 22 && $action <= 24) {
 # Check priority option:
 if (my $value = $args{priority}) {
   unless ($value =~ /^[1-5]$/) {
-    exitWithError("Invalid priority `$value'.", 22);
+    exit_with_error("Invalid priority `$value'.", 22);
   }
 }
 
 # Check line width option:
 if ($Text::Wrap::columns < 75) {
-  exitWithError("Invalid line width `$Text::Wrap::columns'.", 22);
+  exit_with_error("Invalid line width `$Text::Wrap::columns'.", 22);
 }
 
 # Perform appropriate action:
-if    ($action ==  0) { display_tasks(\%args) }
+if ($action ==  0) {
+  $outfile ? dump_tasks($outfile, \%args) : display_tasks(\%args);
+}
 elsif ($action ==  1) { add_task(\%args) }
 elsif ($action ==  2) { change_task($identifier, \%args) }
 elsif ($action ==  3) { remove_task($identifier) }
