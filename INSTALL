@@ -16,12 +16,12 @@
 
 1. General System Requirements
 
-w2do is a single file written in Perl 5 and as such,  it should be platform
-independent. However, working installation of Perl 5 is required to run the
-application. If you are using one of the Unix-like operating systems, it is
-probable that you have it already installed.  If you are using Windows, you
-can obtain it from  http://www.activestate.com/Products/activeperl/ free of
-charge.
+All parts of w2do package  are standalone scripts written in Perl 5  and as
+such, they should be platform independent. However, working installation of
+Perl 5 is required in  order to run these scripts. If you  are using one of
+Unix-like operating systems, it is highly probable that you have it already
+installed.  If you are using Windows,  you can download it  free of  charge
+from <http://www.activestate.com/Products/activeperl/>.
 
 
 2. Installing on Unix Systems
@@ -32,8 +32,8 @@ the main directory of the w2do source package and type:
 
   make install
 
-This will install the runnable script to the predefined  /usr/local/bin and
-manual page to the /usr/local/share/man/man1, but you can edit the Makefile
+This will install all runnable scripts to the predefined /usr/local/bin and
+man pages to the  /usr/local/share/man/man1,  but you can edit the Makefile
 to change this behaviour according to your taste and requirements; relevant
 part should be well commented and therefore easy to understand.  Similarly,
 
@@ -48,6 +48,6 @@ No  special  installation  is required  in order to run  w2do on  Microsoft
 Windows. In your favourite command line interpreter  (e.g. cmd.exe), simply
 get into the main directory of the w2do source package and type:
 
-  perl w2do
+  perl w2do [options]
 
-Type `perl w2do --help' for information about the usage.
+etc. Try `--help' switch to get information about the usage.

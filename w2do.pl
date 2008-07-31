@@ -26,7 +26,7 @@ use Getopt::Long;
 
 # General script information:
 our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.0.3';                          # Script version.
+our $VERSION   = '2.0.4';                          # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE};  # User's home directory.
@@ -40,7 +40,6 @@ $Text::Wrap::columns = 75;                         # Table width.
 
 # Command line options:
 my $action     = 0;                                # Default action.
-my $outfile    = '';                               # Output file.
 my ($identifier, %args);
 
 # Signal handlers:
@@ -93,17 +92,16 @@ Specifying options:
   -d, --date date          specify the due date; available options are
                            anytime, today, yesterday, tomorrow, month,
                            year, or an exact date in the YYYY-MM-DD format
-  -p, --priority priority  specify the priority; available options are
-                           1-5 where 1 represents the highest priority
+  -p, --priority priority  specify the priority; available options are 1-5
+                           where 1 represents the highest priority
   -f, --finished           specify the finished task
   -u, --unfinished         specify the unfinished task
 
 Additional options:
 
-  -o, --output file        write items to the selected file
-  -F, --file file          use selected file instead of default ~/$SAVENAME
-  -w, --width width        specify the line width; the minimal value is 75
-  -q, --quiet              do not display messages that are not necessary
+  -s, --savefile file      use selected file instead of default ~/$SAVENAME
+  -w, --width width        use selected line width; the minimal value is 75
+  -q, --quiet              avoid displaying messages that are not necessary
 END_HELP
 }
 
@@ -204,42 +202,6 @@ sub display_tasks {
       $task     =  wrap($indent, $indent, $5); $task =~ s/\s+//;
 
       printf($format, $id, $group, $date, $priority, $state, $task);
-    }
-  }
-  else {
-    print "No matching task found.\n" if $verbose;
-  }
-}
-
-# Write items in the task list to the selected file:
-sub dump_tasks {
-  my ($outfile, $args) = @_;
-  my @data;
-
-  load_selection(\@data, undef, $args);
-
-  if (@data) {
-    if (open(SAVEFILE, ">$outfile")) {
-      my ($group, $task) = '';
-      
-      foreach my $line (sort @data) {
-        $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
-
-        if ($1 ne $group) {
-          print SAVEFILE "\n" if $group;
-          print SAVEFILE "$1:\n\n";
-          $group = $1;
-        }
-
-        $task = ($4 eq 't') ? "$5 (done)\n" : "$5\n";
-        print SAVEFILE wrap('  * ', '    ', $task);
-      }
-
-      close(SAVEFILE);
-      print "Tasks have been successfully written.\n" if $verbose;
-    }
-    else {
-      exitWithError("Unable to write to `$outfile'.", 13);
     }
   }
   else {
@@ -388,35 +350,6 @@ sub revert_last_action {
   }
 }
 
-# Translate due date alias to mask:
-sub translate_mask {
-  my $date = shift;
-
-  if ($date eq 'month') { 
-    return substr(date_to_string(time), 0, 8) . '..';
-  }
-  elsif ($date eq 'year')  { 
-    return substr(date_to_string(time), 0, 5) . '..-..';
-  }
-  else  { 
-    translate_date($date);
-  }
-}
-
-# Translate due date alias to YYYY-MM-DD string:
-sub translate_date {
-  my $date = shift;
-
-  if    ($date =~ /^\d{4}-[01]\d-[0-3]\d$/) { return $date }
-  elsif ($date eq 'anytime')   { return $date }
-  elsif ($date eq 'today')     { return date_to_string(time) }
-  elsif ($date eq 'yesterday') { return date_to_string(time - 86400) }
-  elsif ($date eq 'tomorrow')  { return date_to_string(time + 86400) }
-  elsif ($date eq 'month')     { return date_to_string(time + 2678400)  }
-  elsif ($date eq 'year')      { return date_to_string(time + 31536000) }
-  else  { exit_with_error("Invalid due date `$date'.", 22) }
-}
-
 # Change selected items in the task list:
 sub change_selection {
   my ($selected, $data, $args) = @_;
@@ -505,6 +438,9 @@ sub load_selection {
 
     close(SAVEFILE);
   }
+  else {
+    exit_with_error("Unable to read from `$savefile'.", 13);
+  }
 }
 
 # Load data with passed due date from the save file:
@@ -524,6 +460,9 @@ sub load_old {
     }
 
     close(SAVEFILE);
+  }
+  else {
+    exit_with_error("Unable to read from `$savefile'.", 13);
   }
 }
 
@@ -585,6 +524,35 @@ sub choose_id {
   return $id;
 }
 
+# Translate due date alias to mask:
+sub translate_mask {
+  my $date = shift;
+
+  if ($date eq 'month') { 
+    return substr(date_to_string(time), 0, 8) . '..';
+  }
+  elsif ($date eq 'year')  { 
+    return substr(date_to_string(time), 0, 5) . '..-..';
+  }
+  else  { 
+    return translate_date($date);
+  }
+}
+
+# Translate due date alias to YYYY-MM-DD string:
+sub translate_date {
+  my $date = shift;
+
+  if    ($date =~ /^\d{4}-[01]\d-[0-3]\d$/) { return $date }
+  elsif ($date eq 'anytime')   { return $date }
+  elsif ($date eq 'today')     { return date_to_string(time) }
+  elsif ($date eq 'yesterday') { return date_to_string(time - 86400) }
+  elsif ($date eq 'tomorrow')  { return date_to_string(time + 86400) }
+  elsif ($date eq 'month')     { return date_to_string(time + 2678400)  }
+  elsif ($date eq 'year')      { return date_to_string(time + 31536000) }
+  else  { exit_with_error("Invalid due date `$date'.", 22) }
+}
+
 # Translate given date to YYYY-MM-DD string:
 sub date_to_string {
   my @date = localtime(shift);
@@ -616,8 +584,7 @@ GetOptions(
   # Additional options:
   'quiet|q'        => sub { $verbose             = 0 },
   'verbose|V'      => sub { $verbose             = 1 },
-  'output|o=s'     => sub { $outfile             = $_[1] },
-  'file|F=s'       => sub { $savefile            = $_[1] },
+  'savefile|s=s'   => sub { $savefile            = $_[1] },
   'width|w=i'      => sub { $Text::Wrap::columns = $_[1] },
 
   # General options:
@@ -678,9 +645,7 @@ if ($Text::Wrap::columns < 75) {
 }
 
 # Perform appropriate action:
-if ($action ==  0) {
-  $outfile ? dump_tasks($outfile, \%args) : display_tasks(\%args);
-}
+if    ($action ==  0) { display_tasks(\%args) }
 elsif ($action ==  1) { add_task(\%args) }
 elsif ($action ==  2) { change_task($identifier, \%args) }
 elsif ($action ==  3) { remove_task($identifier) }

@@ -35,16 +35,24 @@ all:
 install:
 	@echo "Copying binaries..."
 	$(INSTALL) -d $(bindir)
-	$(INSTALL) -m 755 ./w2do $(bindir)
+	$(INSTALL) -m 755 ./w2do.pl $(bindir)/w2do
+	$(INSTALL) -m 755 ./w2html.pl $(bindir)/w2html
+	$(INSTALL) -m 755 ./w2text.pl $(bindir)/w2text
 	@echo "Copying man pages..."
 	$(INSTALL) -d $(man1dir)
-	$(INSTALL) -m 644 ./man/man1/w2do.1.gz $(man1dir)
+	$(INSTALL) -m 644 ./man/man1/w2do.1 $(man1dir)
+	$(INSTALL) -m 644 ./man/man1/w2html.1 $(man1dir)
+	$(INSTALL) -m 644 ./man/man1/w2text.1 $(man1dir)
 
 uninstall:
 	@echo "Removing binaries..."
 	rm -f $(bindir)/w2do
+	rm -f $(bindir)/w2html
+	rm -f $(bindir)/w2text
 	@echo "Removing man pages..."
-	rm -f $(man1dir)/w2do.1.gz
+	rm -f $(man1dir)/w2do.1
+	rm -f $(man1dir)/w2html.1
+	rm -f $(man1dir)/w2text.1
 	@echo "Removing empty directories..."
 	-rmdir $(bindir) $(man1dir) $(mandir)
 
