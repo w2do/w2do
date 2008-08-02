@@ -32,8 +32,8 @@ our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE};  # User's home directory.
 our $USERNAME  = $ENV{USERNAME} || 'user';         # User's name.
 our $SAVENAME  = '.w2do';                          # Save file name.
 our $savefile  = catfile($HOMEDIR, $SAVENAME);     # Save file location.
-our $title     = "$USERNAME\'s TODO list";         # Document title.
-our $subtitle  = full_date_to_string(time);        # Document subtitle.
+our $title     = "$USERNAME\'s TODO list";         # Document heading.
+our $subtitle  = full_date_to_string(time);        # Document subheading.
 
 # Appearance settings:
 our $fg_colour = '#000000';                        # Foreground colour.
@@ -151,7 +151,7 @@ sub write_tasks {
 
 # Return the document header:
 sub header {
-  my $generated = localtime(time);
+  my $timestamp = localtime(time);
   return << "END_HEADER";
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
                       "http://www.w3.org/TR/html4/strict.dtd">
@@ -159,7 +159,7 @@ sub header {
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="Generator" content="$NAME $VERSION">
-  <meta name="Date" content="$generated">
+  <meta name="Date" content="$timestamp">
   <title>$title</title>
   <style type="text/css">
   <!--
