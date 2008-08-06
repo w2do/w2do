@@ -438,9 +438,6 @@ sub load_selection {
 
     close(SAVEFILE);
   }
-  else {
-    exit_with_error("Unable to read from `$savefile'.", 13);
-  }
 }
 
 # Load data with passed due date from the save file:
@@ -460,9 +457,6 @@ sub load_old {
     }
 
     close(SAVEFILE);
-  }
-  else {
-    exit_with_error("Unable to read from `$savefile'.", 13);
   }
 }
 
