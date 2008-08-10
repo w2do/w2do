@@ -30,12 +30,11 @@ our $VERSION   = '2.0.4';                          # Script version.
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE};  # User's home directory.
 our $USERNAME  = $ENV{USERNAME} || 'user';         # User's name.
-our $SAVENAME  = '.w2do';                          # Save file name.
-our $savefile  = catfile($HOMEDIR, $SAVENAME);     # Save file location.
-our $title     = "$USERNAME\'s TODO list";         # Document heading.
-our $subtitle  = full_date_to_string(time);        # Document subheading.
+our $savefile  = catfile($HOMEDIR, '.w2do');       # Save file location.
 
 # Appearance settings:
+our $title     = "$USERNAME\'s TODO list";         # Document heading.
+our $subtitle  = full_date_to_string(time);        # Document subheading.
 our $fg_colour = '#000000';                        # Foreground colour.
 our $bg_colour = '#ffffff';                        # Background colour.
 our $header_fg = '#000000';                        # Header foreground.
@@ -83,7 +82,7 @@ Specifying options:
 
 Additional options:
 
-  -s, --savefile file      use selected file instead of default ~/$SAVENAME
+  -s, --savefile file      use selected file instead of the default ~/.w2do
   -o, --output file        use selected file instead of the standard output
   -H, --heading text       use selected heading
   -S, --subheading text    use selected subheading

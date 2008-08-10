@@ -30,8 +30,7 @@ our $VERSION   = '2.0.4';                          # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE};  # User's home directory.
-our $SAVENAME  = ".$NAME";                         # Save file name.
-our $savefile  = catfile($HOMEDIR, $SAVENAME);     # Save file location.
+our $savefile  = catfile($HOMEDIR, '.w2do');       # Save file location.
 our $backext   = '.bak';                           # Backup file extension.
 our $verbose   = 1;                                # Verbosity level (0-1).
 
@@ -40,7 +39,8 @@ $Text::Wrap::columns = 75;                         # Table width.
 
 # Command line options:
 my $action     = 0;                                # Default action.
-my ($identifier, %args);
+my $identifier = undef;                            # Task identifier.
+my %args       = ();                               # Specifying options.
 
 # Signal handlers:
 $SIG{__WARN__} = sub { 
@@ -99,7 +99,7 @@ Specifying options:
 
 Additional options:
 
-  -s, --savefile file      use selected file instead of default ~/$SAVENAME
+  -s, --savefile file      use selected file instead of the default ~/.w2do
   -w, --width width        use selected line width; the minimal value is 75
   -q, --quiet              avoid displaying messages that are not necessary
 END_HELP

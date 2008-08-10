@@ -29,8 +29,7 @@ our $VERSION   = '2.0.4';                          # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE};  # User's home directory.
-our $SAVENAME  = '.w2do';                          # Save file name.
-our $savefile  = catfile($HOMEDIR, $SAVENAME);     # Save file location.
+our $savefile  = catfile($HOMEDIR, '.w2do');       # Save file location.
 
 # Appearance settings:
 $Text::Wrap::columns = 75;                         # Line width.
@@ -70,7 +69,7 @@ Specifying options:
 
 Additional options:
 
-  -s, --savefile file      use selected file instead of default ~/$SAVENAME
+  -s, --savefile file      use selected file instead of the default ~/.w2do
   -o, --output file        use selected file instead of the standard output
   -w, --width width        use selected line width; the minimal value is 75
 END_HELP
