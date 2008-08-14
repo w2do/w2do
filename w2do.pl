@@ -26,16 +26,16 @@ use Getopt::Long;
 
 # General script information:
 our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.0.4';                          # Script version.
+our $VERSION   = '2.0.5';                          # Script version.
 
 # Global script settings:
-our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE};  # User's home directory.
+our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
 our $savefile  = catfile($HOMEDIR, '.w2do');       # Save file location.
-our $backext   = '.bak';                           # Backup file extension.
-our $verbose   = 1;                                # Verbosity level (0-1).
+our $backfile  = catfile($HOMEDIR, '.w2do.bak');   # Backup file location.
+our $verbose   = 1;                                # Verbosity level.
 
 # Appearance settings:
-$Text::Wrap::columns = 75;                         # Table width.
+$Text::Wrap::columns = 75;                         # Default table width.
 
 # Command line options:
 my $action     = 0;                                # Default action.
@@ -340,9 +340,7 @@ sub purge_all {
 
 # Revert last action:
 sub revert_last_action {
-  my $backup = "$savefile$backext";
-
-  if (move($backup, $savefile)) {
+  if (move($backfile, $savefile)) {
     print "Last action has been successfully reverted.\n" if $verbose;
   }
   else {
@@ -416,19 +414,23 @@ sub purge_selection {
 # Load selected data from the save file:
 sub load_selection {
   my ($selected, $rest, $args) = @_;
+  my  $reserved  = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
 
-  my $group    = $args->{group}    || '[^:]*';
-  my $date     = $args->{date}     || '[^:]*';
-  my $priority = $args->{priority} || '[1-5]';
-  my $state    = $args->{state}    || '[ft]';
-  my $task     = $args->{task}     || '.*';
-  my $id       = $args->{id}       || '\d+';
+  $args->{group} =~ s/($reserved)/\\$1/g if $args->{group};
+  $args->{task}  =~ s/($reserved)/\\$1/g if $args->{task};
 
-  my $mask     = "^$group:$date:$priority:$state:$task:$id\$";
+  my $group      = $args->{group}    || '[^:]*';
+  my $date       = $args->{date}     || '[^:]*';
+  my $priority   = $args->{priority} || '[1-5]';
+  my $state      = $args->{state}    || '[ft]';
+  my $task       = $args->{task}     || '';
+  my $id         = $args->{id}       || '\d+';
+
+  my $mask       = "^$group:$date:$priority:$state:.*$task.*:$id\$";
 
   if (open(SAVEFILE, "$savefile")) {
     while (my $line = <SAVEFILE>) {
-      if ($line =~ /$mask/) {
+      if ($line =~ /$mask/i) {
         push(@$selected, $line);
       }
       else {
@@ -463,9 +465,8 @@ sub load_old {
 # Save data to the save file:
 sub save_data {
   my $data   = shift;
-  my $backup = "$savefile$backext";
 
-  copy($savefile, $backup) if (-r $savefile);
+  copy($savefile, $backfile) if (-r $savefile);
 
   if (open(SAVEFILE, ">$savefile")) {
     foreach my $item (@$data) {
@@ -482,9 +483,8 @@ sub save_data {
 # Add data to the end of the save file:
 sub add_data {
   my $data   = shift;
-  my $backup = "$savefile$backext";
 
-  copy($savefile, $backup) if (-r $savefile);
+  copy($savefile, $backfile) if (-r $savefile);
 
   if (open(SAVEFILE, ">>$savefile")) {
     foreach my $item (@$data) {
