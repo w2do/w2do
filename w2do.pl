@@ -129,11 +129,11 @@ sub display_groups {
       if ($item =~ /^([^:]*):[^:]*:[1-5]:([ft]):.*:\d+$/) {
         if ($groups->{$1}) {
           $groups->{$1}->{tasks} += 1;
-          $groups->{$1}->{done}  += 1 if ($2 eq 't');
+          $groups->{$1}->{done}  += ($2 eq 't') ? 1 : 0;
         }
         else {
           $groups->{$1}->{tasks}  = 1;
-          $groups->{$1}->{done}   = 0;
+          $groups->{$1}->{done}   = ($2 eq 't') ? 1 : 0;
         }
       }
     }
