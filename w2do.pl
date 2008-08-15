@@ -50,7 +50,7 @@ $SIG{__WARN__} = sub {
 # Display script usage:
 sub display_help {
   print << "END_HELP";
-Usage: $NAME [-l] [-g group] [-d date] [-p priority] [-f|-u]
+Usage: $NAME [-l] [-t task] [-g group] [-d date] [-p priority] [-f|-u]
        $NAME -a task [-g group] [-d date] [-p priority] [-f|-u]
        $NAME -c id [-t task] [-g group] [-d date] [-p priority] [-f|-u]
        $NAME -r id
@@ -120,21 +120,31 @@ END_VERSION
 
 # Display all groups in the task list:
 sub display_groups {
-  my (@data, %groups);
+  my (@data, $groups);
 
   load_selection(\@data);
 
   if (@data) {
     for my $item (@data) {
-      if ($item =~ /^([^:]*):[^:]*:[1-5]:[ft]:.*:\d+$/) {
-        ($groups{$1}) ? ($groups{$1}++) : ($groups{$1} = 1);
+      if ($item =~ /^([^:]*):[^:]*:[1-5]:([ft]):.*:\d+$/) {
+        if ($groups->{$1}) {
+          $groups->{$1}->{tasks} += 1;
+          $groups->{$1}->{done}  += 1 if ($2 eq 't');
+        }
+        else {
+          $groups->{$1}->{tasks}  = 1;
+          $groups->{$1}->{done}   = 0;
+        }
       }
     }
 
-    print join(', ', map {"$_ (".$groups{$_}.")"} sort keys(%groups)),"\n";
+    print join(', ', map { "$_ (" . $groups->{$_}->{done}  . '/'
+                                  . $groups->{$_}->{tasks} . ')' }
+                     sort keys(%$groups)),
+          "\n";
   }
   else {
-    print "The list is empty.\n" if $verbose;
+    print "The task list is empty.\n" if $verbose;
   }
 }
 
@@ -158,7 +168,7 @@ sub display_statistics {
 
   printf "%d group%s, %d task%s, %d unfinished\n",
          $groups, (($groups > 1) ? 's' : ''), 
-         $tasks,  (($tasks > 1)  ? 's' : ''),
+         $tasks,  (($tasks  > 1) ? 's' : ''),
          $unfinished;
 }
 
