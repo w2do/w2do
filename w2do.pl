@@ -30,12 +30,12 @@ our $VERSION   = '2.0.5';                          # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
-our $savefile  = catfile($HOMEDIR, '.w2do');       # Save file location.
-our $backfile  = catfile($HOMEDIR, '.w2do.bak');   # Backup file location.
-our $verbose   = 1;                                # Verbosity level.
+our $savefile  = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
+our $backext   = '.bak';
+our $verbose   = 1;
 
 # Appearance settings:
-$Text::Wrap::columns = 75;                         # Default table width.
+$Text::Wrap::columns = $ENV{W2DO_WIDTH} || 75;     # Default table width.
 
 # Command line options:
 my $action     = 0;                                # Default action.
@@ -350,7 +350,7 @@ sub purge_all {
 
 # Revert last action:
 sub revert_last_action {
-  if (move($backfile, $savefile)) {
+  if (move("$savefile$backext", $savefile)) {
     print "Last action has been successfully reverted.\n" if $verbose;
   }
   else {
@@ -476,7 +476,7 @@ sub load_old {
 sub save_data {
   my $data   = shift;
 
-  copy($savefile, $backfile) if (-r $savefile);
+  copy($savefile, "$savefile$backext") if (-r $savefile);
 
   if (open(SAVEFILE, ">$savefile")) {
     foreach my $item (@$data) {
@@ -494,7 +494,7 @@ sub save_data {
 sub add_data {
   my $data   = shift;
 
-  copy($savefile, $backfile) if (-r $savefile);
+  copy($savefile, "$savefile$backext") if (-r $savefile);
 
   if (open(SAVEFILE, ">>$savefile")) {
     foreach my $item (@$data) {

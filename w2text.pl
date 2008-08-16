@@ -28,11 +28,11 @@ our $NAME      = basename($0, '.pl');              # Script name.
 our $VERSION   = '2.0.4';                          # Script version.
 
 # Global script settings:
-our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE};  # User's home directory.
-our $savefile  = catfile($HOMEDIR, '.w2do');       # Save file location.
+our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
+our $savefile  = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
 
 # Appearance settings:
-$Text::Wrap::columns = 75;                         # Line width.
+$Text::Wrap::columns = $ENV{W2DO_WIDTH} || 75;     # Default line width.
 
 # Command line options:
 my $outfile    = '-';                              # Output file name.

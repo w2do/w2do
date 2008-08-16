@@ -28,9 +28,9 @@ our $NAME      = basename($0, '.pl');              # Script name.
 our $VERSION   = '2.0.4';                          # Script version.
 
 # Global script settings:
-our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE};  # User's home directory.
-our $USERNAME  = $ENV{USERNAME} || 'user';         # User's name.
-our $savefile  = catfile($HOMEDIR, '.w2do');       # Save file location.
+our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
+our $USERNAME  = $ENV{USERNAME} || 'user';
+our $savefile  = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
 
 # Appearance settings:
 our $title     = "$USERNAME\'s TODO list";         # Document heading.
