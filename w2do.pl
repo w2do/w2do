@@ -633,11 +633,12 @@ GetOptions(
   'remove-all'     => sub { $action = 43 },
   'purge-all'      => sub { $action = 44 },
 
-  'undo|U'         => sub { revert_last_action(); exit 0 },
-  'groups|G'       => sub { display_groups();     exit 0 },
-  'stats|S'        => sub { display_statistics(); exit 0 },
-  'help|h'         => sub { display_help();       exit 0 },
-  'version|v'      => sub { display_version();    exit 0 },
+  'undo|U'         => sub { $action = 95 },
+  'groups|G'       => sub { $action = 96 },
+  'stats|S'        => sub { $action = 97 },
+
+  'help|h'         => sub { display_help();    exit 0 },
+  'version|v'      => sub { display_version(); exit 0 },
 );
 
 # Trim group option:
@@ -685,6 +686,9 @@ elsif ($action == 34) { purge_old() }
 elsif ($action == 42) { change_all(\%args) }
 elsif ($action == 43) { remove_all() }
 elsif ($action == 44) { purge_all() }
+elsif ($action == 95) { revert_last_action() }
+elsif ($action == 96) { display_groups() }
+elsif ($action == 97) { display_statistics() }
 
 # Return success:
 exit 0;
