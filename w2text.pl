@@ -25,7 +25,7 @@ use Getopt::Long;
 
 # General script information:
 our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.0.4';                          # Script version.
+our $VERSION   = '2.0.5';                          # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
@@ -102,10 +102,10 @@ sub write_tasks {
       foreach my $line (sort @data) {
         $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
 
-        if ($1 ne $group) {
+        if (lc($1) ne $group) {
           print SAVEFILE "\n" if $group;
           print SAVEFILE "$1:\n\n";
-          $group = $1;
+          $group = lc($1);
         }
 
         $task = ($4 eq 't') ? "$5 (done)\n" : "$5\n";
@@ -123,19 +123,23 @@ sub write_tasks {
 # Load selected data from the save file:
 sub load_selection {
   my ($selected, $rest, $args) = @_;
+  my  $reserved  = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
+
+  $args->{group} =~ s/($reserved)/\\$1/g if $args->{group};
+  $args->{task}  =~ s/($reserved)/\\$1/g if $args->{task};
 
   my $group    = $args->{group}    || '[^:]*';
   my $date     = $args->{date}     || '[^:]*';
   my $priority = $args->{priority} || '[1-5]';
   my $state    = $args->{state}    || '[ft]';
-  my $task     = $args->{task}     || '.*';
+  my $task     = $args->{task}     || '';
   my $id       = $args->{id}       || '\d+';
 
-  my $mask     = "^$group:$date:$priority:$state:$task:$id\$";
+  my $mask     = "^$group:$date:$priority:$state:.*$task.*:$id\$";
 
   if (open(SAVEFILE, "$savefile")) {
     while (my $line = <SAVEFILE>) {
-      if ($line =~ /$mask/) {
+      if ($line =~ /$mask/i) {
         push(@$selected, $line);
       }
       else {

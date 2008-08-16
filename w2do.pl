@@ -169,8 +169,8 @@ sub display_tasks {
     my $format  = " %-4s  %-10s  %-10s   %s    %s   %s\n";
     my $indent  = ' 'x 41;
 
-    my $group   = '';
-    my ($id, $date, $priority, $state, $task);
+    my $current = '';
+    my ($id, $group, $date, $priority, $state, $task);
 
     $Text::Wrap::columns++;
 
@@ -179,9 +179,9 @@ sub display_tasks {
     foreach my $line (sort @data) {
       $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
 
-      if ($1 ne $group) {
+      if (lc($1) ne $current) {
         print $divider if $group;
-        $group  = $1;
+        $current = lc($1);
       }
 
       if ($2 eq date_to_string(time)) { $date = 'today'; }
@@ -190,6 +190,7 @@ sub display_tasks {
       else { $date = $2; }
 
       $id       = $6;
+      $group    = $1;
       $priority = $3;
       $state    = ($4 eq 'f') ? '-' : 'f';
       $task     =  wrap($indent, $indent, $5); $task =~ s/\s+//;
@@ -501,13 +502,15 @@ sub get_stats {
   if (open(SAVEFILE, "$savefile")) {
     while (my $line = <SAVEFILE>) {
       if ($line =~ /^([^:]*):[^:]*:[1-5]:([ft]):.*:\d+$/) {
-        if ($stats->{$1}) {
-          $stats->{$1}->{tasks} += 1;
-          $stats->{$1}->{done}  += ($2 eq 't') ? 1 : 0;
+        my $group = lc($1);
+
+        if ($stats->{$group}) {
+          $stats->{$group}->{tasks} += 1;
+          $stats->{$group}->{done}  += ($2 eq 't') ? 1 : 0;
         }
         else {
-          $stats->{$1}->{tasks}  = 1;
-          $stats->{$1}->{done}   = ($2 eq 't') ? 1 : 0;
+          $stats->{$group}->{tasks}  = 1;
+          $stats->{$group}->{done}   = ($2 eq 't') ? 1 : 0;
           $groups++;
         }
 
