@@ -9,12 +9,14 @@
 .\" A copy  of the license is included  as a file called FDL  in the main
 .\" directory of the w2do source package.
 .\"
-.TH W2DO 1 "30 July 2008" "Version 2.0.4"
+.TH W2DO 1 "16 August 2008" "Version 2.0.5"
 .SH NAME
 w2do \- a simple text-based todo manager
 .SH SYNOPSIS
 .B w2do
 .RB [ \-l ]
+.RB [ \-t
+.IR task ]
 .RB [ \-g
 .IR group ]
 .RB [ \-d
@@ -202,6 +204,16 @@ the minimal value is
 .TP
 .BR \-q ", " \-\-quiet
 Avoid displaying messages that are not necessary.
+.SH ENVIRONMENT
+.TP
+.B W2DO_SAVEFILE
+Use selected file instead of the default
+.I ~/.w2do
+as a save file.
+.TP
+.B W2DO_WIDTH
+Use selected line width; the minimal value is
+.BR 75 .
 .SH FILES
 .TP
 .I ~/.w2do

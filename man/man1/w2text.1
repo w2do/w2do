@@ -9,7 +9,7 @@
 .\" A copy  of the license is included  as a file called FDL  in the main
 .\" directory of the w2do source package.
 .\"
-.TH W2TEXT 1 "30 July 2008" "Version 2.0.4"
+.TH W2TEXT 1 "16 August 2008" "Version 2.0.5"
 .SH NAME
 w2text \- a plain text exporter for w2do
 .SH SYNOPSIS
@@ -95,11 +95,20 @@ instead of the default
 as a save file.
 .TP
 .BI \-w " width" "\fR,\fP \-\-width" " width"
-Specify the line 
-.IR width ,
-where
-.B 75
-is the minimal possible value.
+Use selected line
+.IR width ;
+the minimal value is
+.BR 75 .
+.SH ENVIRONMENT
+.TP
+.B W2DO_SAVEFILE
+Use selected file instead of the default
+.I ~/.w2do
+as a save file.
+.TP
+.B W2DO_WIDTH
+Use selected line width; the minimal value is
+.BR 75 .
 .SH FILES
 .TP
 .I ~/.w2do
