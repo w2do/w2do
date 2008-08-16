@@ -120,27 +120,14 @@ END_VERSION
 
 # Display all groups in the task list:
 sub display_groups {
-  my (@data, $groups);
+  my $stats = {};
 
-  load_selection(\@data);
+  get_stats($stats);
 
-  if (@data) {
-    for my $item (@data) {
-      if ($item =~ /^([^:]*):[^:]*:[1-5]:([ft]):.*:\d+$/) {
-        if ($groups->{$1}) {
-          $groups->{$1}->{tasks} += 1;
-          $groups->{$1}->{done}  += ($2 eq 't') ? 1 : 0;
-        }
-        else {
-          $groups->{$1}->{tasks}  = 1;
-          $groups->{$1}->{done}   = ($2 eq 't') ? 1 : 0;
-        }
-      }
-    }
-
-    print join(', ', map { "$_ (" . $groups->{$_}->{done}  . '/'
-                                  . $groups->{$_}->{tasks} . ')' }
-                     sort keys(%$groups)),
+  if (%$stats) {
+    print join(', ', map { "$_ (" . $stats->{$_}->{done}  . '/'
+                                  . $stats->{$_}->{tasks} . ')' }
+                     sort keys(%$stats)),
           "\n";
   }
   else {
@@ -150,26 +137,22 @@ sub display_groups {
 
 # Display detailed task list statistics:
 sub display_statistics {
-  my @data       = ();
-  my $groups     = 0;
-  my $tasks      = 0;
-  my $unfinished = 0;
-  my $last       = '';
+  my $stats = {};
+  my $per;
+  my ($groups, $tasks, $undone) = get_stats($stats);
 
-  load_selection(\@data);
+  printf "%d group%s, %d task%s, %d unfinished\n\n",
+         $groups, (($groups != 1) ? 's' : ''),
+         $tasks,  (($tasks  != 1) ? 's' : ''),
+         $undone;
 
-  for my $item (sort @data) {
-    if ($item =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):\d+$/) {
-      if ($1 ne $last) { $groups++; $last = $1; }
-      if ($4 eq 'f') { $unfinished++; } 
-      $tasks++;
-    }
+  foreach my $group (sort (keys %$stats)) {
+    $per = int($stats->{$group}->{done} * 100 / $stats->{$group}->{tasks});
+    printf "%-11s %s %d%%\n", "$group:", draw_progressbar($per), $per;
   }
 
-  printf "%d group%s, %d task%s, %d unfinished\n",
-         $groups, (($groups > 1) ? 's' : ''), 
-         $tasks,  (($tasks  > 1) ? 's' : ''),
-         $unfinished;
+  $per = $tasks ? int(($tasks - $undone) * 100 / $tasks) : 0;
+  printf "---\n%-11s %s %d%%\n", "total:", draw_progressbar($per), $per;
 }
 
 # Display items in the task list:
@@ -474,7 +457,7 @@ sub load_old {
 
 # Save data to the save file:
 sub save_data {
-  my $data   = shift;
+  my $data = shift;
 
   copy($savefile, "$savefile$backext") if (-r $savefile);
 
@@ -492,7 +475,7 @@ sub save_data {
 
 # Add data to the end of the save file:
 sub add_data {
-  my $data   = shift;
+  my $data = shift;
 
   copy($savefile, "$savefile$backext") if (-r $savefile);
 
@@ -506,6 +489,35 @@ sub add_data {
   else {
     exit_with_error("Unable to write to `$savefile'.", 13);
   }
+}
+
+# Get task list statistics:
+sub get_stats {
+  my $stats  = shift;
+  my $groups = 0;
+  my $tasks  = 0;
+  my $undone = 0;
+
+  if (open(SAVEFILE, "$savefile")) {
+    while (my $line = <SAVEFILE>) {
+      if ($line =~ /^([^:]*):[^:]*:[1-5]:([ft]):.*:\d+$/) {
+        if ($stats->{$1}) {
+          $stats->{$1}->{tasks} += 1;
+          $stats->{$1}->{done}  += ($2 eq 't') ? 1 : 0;
+        }
+        else {
+          $stats->{$1}->{tasks}  = 1;
+          $stats->{$1}->{done}   = ($2 eq 't') ? 1 : 0;
+          $groups++;
+        }
+
+        $tasks++;
+        $undone++ unless ($2 eq 't');
+      }
+    }
+  }
+
+  return $groups, $tasks, $undone;
 }
 
 # Choose first available ID:
@@ -561,6 +573,14 @@ sub translate_date {
 sub date_to_string {
   my @date = localtime(shift);
   return sprintf("%d-%02d-%02d", ($date[5] + 1900), ++$date[4], $date[3]);
+}
+
+# Draw progress bar:
+sub draw_progressbar {
+  my $percent = shift;
+  my $pointer = ($percent > 0 && $percent < 100) ? '>' : '';
+  return '[' . '=' x int($percent/10) . $pointer .
+         ' ' x ($percent ? (9 - int($percent/10)) : 10) . ']';
 }
 
 # Display given message and immediately terminate the script:
