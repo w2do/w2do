@@ -27,17 +27,25 @@ from <http://www.activestate.com/Products/activeperl/>.
 2. Installing on Unix Systems
 
 The easiest way to install w2do on Unix operating system (e.g. Linux, veri-
-ous *BSD systems etc.) is to use the existing makefile. As a root, get into
+ous *BSD systems etc.) is to use the existing Makefile. As a root, get into
 the main directory of the w2do source package and type:
 
   make install
 
-This will install all runnable scripts to the predefined /usr/local/bin and
-man pages to the  /usr/local/share/man/man1,  but you can edit the Makefile
-to change this behaviour according to your taste and requirements; relevant
-part should be well commented and therefore easy to understand.  Similarly,
+This will install all executables  and their corresponding man pages to the
+predefined /usr/local/bin and /usr/local/share/man  respectively.  If these
+locations do not satisfy your needs,  you can either edit the relevant part
+of the Makefile, or you can change the prefix directly on the command line:
+
+  make prefix=/some/location install
+
+Similarly, typing
 
   make uninstall
+
+or, if you have previously changed the destination directory,
+
+  make prefix=/some/location uninstall
 
 will completely remove all installed files.
 
