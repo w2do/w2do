@@ -217,7 +217,7 @@ sub add_task {
   my @data     = ("$group:$date:$priority:$state:$task:$id\n"); 
 
   add_data(\@data);
-  print "Task has been successfully added.\n" if $verbose;
+  print "Task has been successfully added with id $id.\n" if $verbose;
 }
 
 # Change selected item in the task list:
