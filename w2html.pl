@@ -25,30 +25,19 @@ use Getopt::Long;
 
 # General script information:
 our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.0.5';                          # Script version.
+our $VERSION   = '2.1.0';                          # Script version.
+our $HOMEPAGE  = 'http://code.google.com/p/w2do/'; # Project homepage.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
-our $USERNAME  = $ENV{USERNAME} || 'user';
+our $TIMESTAMP = localtime(time);
 our $savefile  = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
-
-# Appearance settings:
-our $title     = "$USERNAME\'s TODO list";         # Document heading.
-our $subtitle  = full_date_to_string(time);        # Document subheading.
-our $fg_colour = '#000000';                        # Foreground colour.
-our $bg_colour = '#ffffff';                        # Background colour.
-our $header_fg = '#000000';                        # Header foreground.
-our $header_bg = '#ffd700';                        # Header background.
-our $header_hl = '#ffd700';                        # Header highlight.
-our $done_fg   = '#000000';                        # Finished foreground.
-our $done_bg   = '#c9fcac';                        # Finished background.
-our $done_hl   = '#a0eb75';                        # Finished highlight.
-our $undone_fg = '#000000';                        # Unfinished foreground.
-our $undone_bg = '#fafad2';                        # Unfinished background.
-our $undone_hl = '#ffe4b5';                        # Unfinished highlight.
+our $heading   = $ENV{USERNAME} ? "$ENV{USERNAME}'s task list"
+                                : "current task list";
 
 # Command line options:
 my $outfile    = '-';                              # Output file name.
+my $design     = 'black';                          # Output design.
 my %args       = ();                               # Specifying options.
 
 # Signal handlers:
@@ -59,9 +48,9 @@ $SIG{__WARN__} = sub {
 # Display script usage:
 sub display_help {
   print << "END_HELP";
-Usage: $NAME [-s file] [-o file] [-H text] [-S text] [-t task] [-g group]
-              [-d date] [-p priority] [-f|-u]
-       $NAME [options]
+Usage: $NAME [-B|-W] [-H heading] [-o file] [-s file] [-f|-u] [-d date]
+              [-g group] [-p priority] [-t task]
+       $NAME -h | -v
 
 General options:
 
@@ -85,18 +74,8 @@ Additional options:
   -s, --savefile file      use selected file instead of the default ~/.w2do
   -o, --output file        use selected file instead of the standard output
   -H, --heading text       use selected heading
-  -S, --subheading text    use selected subheading
-  --fg  colour             document foreground colour
-  --bg  colour             document background colour
-  --fgh colour             header foreground colour
-  --bgh colour             header background colour
-  --hlh colour             header highlight colour
-  --fgf colour             finished task foreground colour
-  --bgf colour             finished task background colour
-  --hlf colour             finished task highlight colour 
-  --fgu colour             unfinished task foreground colour
-  --bgu colour             unfinished task background colour
-  --hlu colour             unfinished task highlight colour
+  -B, --black              produce page with dark design
+  -W, --white              produce page with bright design
 END_HELP
 }
 
@@ -116,9 +95,11 @@ END_VERSION
 # Write items in the task list to the selected output:
 sub write_tasks {
   my ($outfile, $args) = @_;
+  my $stats = {};
   my @data;
 
   load_selection(\@data, undef, $args);
+  get_stats($stats);
 
   if (open(SAVEFILE, ">$outfile")) {
     if (@data) {
@@ -131,8 +112,11 @@ sub write_tasks {
 
         if (lc($1) ne $group) {
           print SAVEFILE close_group() if $group;
-          print SAVEFILE begin_group($1);
+
           $group = lc($1);
+
+          print SAVEFILE begin_group($1, $stats->{$group}->{tasks},
+                                         $stats->{$group}->{done});
         }
 
         print SAVEFILE group_item($2, $3, $4, $5);
@@ -150,110 +134,168 @@ sub write_tasks {
 
 # Return the document header:
 sub header {
-  my $timestamp = localtime(time);
-  return << "END_HEADER";
+  if ($design eq 'black') {
+    return << "END_HEADER";
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
                       "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="Generator" content="$NAME $VERSION">
-  <meta name="Date" content="$timestamp">
-  <title>$title</title>
+  <meta name="Date" content="$TIMESTAMP">
+  <title>$heading</title>
   <style type="text/css">
   <!--
     body {
-      color:            $fg_colour;
-      background-color: $bg_colour;
-      text-align:       center;
-      font-family:      Arial, sans-serif;
-    }
-
-    h1 {
-      text-align:       center;
+      background-color: #000000;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      text-align: center;
     }
 
     h2 {
-      padding:          2px;
-      border-bottom:    1px solid $fg_colour;
+      color: #1e90ff;
+      margin-bottom: 4px;
+      text-align: left;
     }
 
     table {
-      width:            100%;
+      margin: auto;
     }
 
     th {
-      color:            $header_fg;
-      background-color: $header_bg;
-    }
-
-    th:hover {
-      background-color: $header_hl;
+      background-color: #1d1d1d;
     }
 
     tr {
-      color:            $undone_fg;
-      background-color: $undone_bg;
+      background-color: #080808;
     }
 
     tr:hover {
-      background-color: $undone_hl;
+      background-color: #1d1d1d;
     }
 
-    .finished {
-      color:            $done_fg;
-      background-color: $done_bg;
+    a {
+      color: #1e90ff;
+      color: #4682b4;
+      text-decoration: none;
     }
 
-    .finished:hover {
-      background-color: $done_hl;
+    a:hover {
+      text-decoration: underline;
     }
 
-    .page {
-      margin:           0 auto;
-      width:            740px;
-      text-align:       justify;
+    #header {
+      background-color: #000000;
+      border-bottom: 4px solid #1d1d1d;
+      margin: auto;
+      padding: 15px 5px 15px 5px;
+      text-align: center;
+      width: 640px;
+    }
+
+    #content {
+      background-color: #0f0f0f;
+      border-bottom: 4px solid #1d1d1d;
+      border-top: 1px solid #080808;
+      margin: auto;
+      padding: 0px 5px 20px 5px;
+      width: 640px;
+    }
+
+    #footer {
+      background-color: #000000;
+      border-top: 1px solid #080808;
+      color: #404040;
+      font-size: x-small;
+      margin: auto;
+      padding: 0px 0px 0px 10px;
+      text-align: right;
+      width: 640px;
+    }
+
+    .hack {
+      background-color: #000000;
+    }
+
+    .heading {
+      color: #1e90ff;
+      font-size: xx-large;
+      font-weight: bold;
+    }
+
+    .subheading {
+      color: #4682b4;
+      font-size: small;
+      text-align: right;
+    }
+
+    .stats {
+      color: #4682b4;
+      font-size: x-small;
+    }
+
+    .tasks {
+      width: 100%;
     }
 
     .date {
-      width:            100px;
-      text-align:       center;
+      width: 100px;
     }
 
     .priority {
-      width:            100px;
-      text-align:       center;
+      width: 100px;
     }
 
     .state {
-      width:            50px;
-      text-align:       center;
+      width: 50px;
     }
 
     .description {
-      text-align:       justify;
+      text-align: justify;
     }
 
-    .info {
-      text-align:       center;
+    .finished {
+      background-color: #303030;
+    }
+
+    .finished:hover {
+      background-color: #404040;
     }
   -->
   </style>
 </head>
 
 <body>
-<div class="page">
 
-<h1>$title</h1>
-<p class="info">$subtitle</p>
+<div id="header">
+  <table>
+    <tr>
+      <td class="hack">
+        <div class="heading">$heading</div>
+        <div class="subheading">$TIMESTAMP</div>
+      </td>
+    </tr>
+  </table>
+</div>
 
+<div id="content">
 END_HEADER
+  }
+  else {
+    exit_with_error("Not implemented yet.", 22); 
+  }
 }
 
 # Return the document footer:
 sub footer {
   return << "END_FOOTER";
 </div>
+
+<div id="footer">
+  generated using <a href="$HOMEPAGE">$NAME $VERSION</a>
+</div>
+
 </body>
 </html>
 END_FOOTER
@@ -261,16 +303,18 @@ END_FOOTER
 
 # Return the beginning of new group:
 sub begin_group {
-  my $group = shift;
-  return << "END_BEGIN_GROUP";
-<h2><a name="$group"></a>$group</h2>
+  my ($group, $tasks, $done) = @_;
+  my $stats = "$tasks tasks, " . ($tasks - $done) . " unfinished";
 
-<table>
+  return << "END_BEGIN_GROUP";
+<h2><a name="$group"></a>$group <span class="stats">$stats</span></h2>
+
+<table class="tasks">
   <tr>
     <th class="date">due date</th>
     <th class="priority">priority</th>
     <th class="state">state</th>
-    <th class="description">description</th>
+    <th class="description">task</th>
   </tr>
 END_BEGIN_GROUP
 }
@@ -330,6 +374,37 @@ sub load_selection {
   }
 }
 
+# Get task list statistics:
+sub get_stats {
+  my $stats  = shift;
+  my $groups = 0;
+  my $tasks  = 0;
+  my $undone = 0;
+
+  if (open(SAVEFILE, "$savefile")) {
+    while (my $line = <SAVEFILE>) {
+      if ($line =~ /^([^:]*):[^:]*:[1-5]:([ft]):.*:\d+$/) {
+        my $group = lc($1);
+
+        if ($stats->{$group}) {
+          $stats->{$group}->{tasks} += 1;
+          $stats->{$group}->{done}  += ($2 eq 't') ? 1 : 0;
+        }
+        else {
+          $stats->{$group}->{tasks}  = 1;
+          $stats->{$group}->{done}   = ($2 eq 't') ? 1 : 0;
+          $groups++;
+        }
+
+        $tasks++;
+        $undone++ unless ($2 eq 't');
+      }
+    }
+  }
+
+  return $groups, $tasks, $undone;
+}
+
 # Translate due date alias to mask:
 sub translate_mask {
   my $date = shift;
@@ -365,14 +440,6 @@ sub date_to_string {
   return sprintf("%d-%02d-%02d", ($date[5] + 1900), ++$date[4], $date[3]);
 }
 
-# Translate given date to the full date string, e.g. 31 July 2008:
-sub full_date_to_string {
-  my @date   = localtime(shift);
-  my @months = qw(January February March April May June July August
-                  September October November December);
-  return sprintf("%d %s %d", $date[3], $months[$date[4]], ($date[5]+1900));
-}
-
 # Display given message and immediately terminate the script:
 sub exit_with_error {
   my $message = shift || 'An unspecified error has occured.';
@@ -402,19 +469,9 @@ GetOptions(
   # Additional options:
   'savefile|s=s'   => sub { $savefile       = $_[1] },
   'output|o=s'     => sub { $outfile        = $_[1] },
-  'heading|H=s'    => sub { $title          = $_[1] },
-  'subheading|S=s' => sub { $subtitle       = $_[1] },
-  'fg=s'           => sub { $fg_colour      = $_[1] },
-  'bg=s'           => sub { $bg_colour      = $_[1] },
-  'fgh=s'          => sub { $header_fg      = $_[1] },
-  'bgh=s'          => sub { $header_bg      = $_[1] },
-  'hlh=s'          => sub { $header_hl      = $_[1] },
-  'fgf=s'          => sub { $done_fg        = $_[1] },
-  'bgf=s'          => sub { $done_bg        = $_[1] },
-  'hlf=s'          => sub { $done_hl        = $_[1] },
-  'fgu=s'          => sub { $undone_fg      = $_[1] },
-  'bgu=s'          => sub { $undone_bg      = $_[1] },
-  'hlu=s'          => sub { $undone_hl      = $_[1] },
+  'heading|H=s'    => sub { $heading        = $_[1] },
+  'black|B'        => sub { $design         = 'black' },
+  'white|W'        => sub { $design         = 'white' },
 );
 
 # Trim group option:
