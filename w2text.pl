@@ -25,7 +25,7 @@ use Getopt::Long;
 
 # General script information:
 our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.0.5';                          # Script version.
+our $VERSION   = '2.1.0';                          # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
@@ -46,8 +46,8 @@ $SIG{__WARN__} = sub {
 # Display script usage:
 sub display_help {
   print << "END_HELP";
-Usage: $NAME [-s file] [-o file] [-w width] [-t task] [-g group] [-d date]
-              [-p priority] [-f|-u]
+Usage: $NAME [-o file] [-s file] [-w width] [-f|-u] [-d date] [-g group]
+              [-p priority] [-t task]
        $NAME -h | -v
 
 General options:
@@ -108,7 +108,7 @@ sub write_tasks {
           $group = lc($1);
         }
 
-        $task = ($4 eq 't') ? "$5 (done)\n" : "$5\n";
+        $task = ($4 eq 't') ? "$5 (OK)\n" : "$5\n";
         print SAVEFILE wrap('  * ', '    ', $task);
       }
 
