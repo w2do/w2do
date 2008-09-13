@@ -631,6 +631,11 @@ GetOptions(
   'blue|B'         => sub { $design         = 'blue' },
 );
 
+# Detect superfluous options:
+if (scalar(@ARGV) != 0) {
+  exit_with_error("Invalid option `$ARGV[0]'.", 22);
+}
+
 # Trim group option:
 if (my $value = $args{group}) {
   $args{group} = substr($value, 0, 10);
