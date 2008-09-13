@@ -251,7 +251,7 @@ sub header {
     }
 
     .description {
-      text-align: justify;
+      text-align: left;
     }
 
     .finished {
