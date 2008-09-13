@@ -37,7 +37,7 @@ our $heading   = $ENV{USERNAME} ? "$ENV{USERNAME}'s task list"
 
 # Command line options:
 my $outfile    = '-';                              # Output file name.
-my $design     = 'black';                          # Output design.
+my $design     = 'blue';                           # Output design.
 my %args       = ();                               # Specifying options.
 
 # Signal handlers:
@@ -48,7 +48,7 @@ $SIG{__WARN__} = sub {
 # Display script usage:
 sub display_help {
   print << "END_HELP";
-Usage: $NAME [-B|-W] [-H heading] [-o file] [-s file] [-f|-u] [-d date]
+Usage: $NAME [-B|-D] [-H heading] [-o file] [-s file] [-f|-u] [-d date]
               [-g group] [-p priority] [-t task]
        $NAME -h | -v
 
@@ -74,8 +74,8 @@ Additional options:
   -s, --savefile file      use selected file instead of the default ~/.w2do
   -o, --output file        use selected file instead of the standard output
   -H, --heading text       use selected heading
-  -B, --black              produce page with dark design
-  -W, --white              produce page with bright design
+  -B, --blue               produce page with blue design
+  -D, --dark               produce page with dark design
 END_HELP
 }
 
@@ -134,8 +134,155 @@ sub write_tasks {
 
 # Return the document header:
 sub header {
-  if ($design eq 'black') {
-    return << "END_HEADER";
+  if ($design eq 'blue') {
+    return << "END_BLUE";
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+                      "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="Generator" content="$NAME $VERSION">
+  <meta name="Date" content="$TIMESTAMP">
+  <title>$heading</title>
+  <style type="text/css">
+  <!--
+    body {
+      background-color: #4682b4;
+      color: #000000;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0px;
+    }
+
+    h2 {
+      color: #225588;
+      margin-bottom: 4px;
+      text-align: left;
+    }
+
+    table {
+      margin: auto;
+    }
+
+    th {
+      background-color: #4682b4;
+      color: #ffffff;
+    }
+
+    tr {
+      background-color: #f5f5f5;
+    }
+
+    tr:hover {
+      background-color: #dcdcdc;
+    }
+
+    a {
+      color: #add8e6;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    #header {
+      text-align: center;
+      width: 100%;
+    }
+
+    #middle {
+      background-color: #ffffff;
+      border-bottom: 4px solid #add8e6;
+      border-top: 4px solid #add8e6;
+      margin: 0px;
+    }
+
+    #content {
+      margin: auto;
+      padding: 0px 5px 20px 5px;
+      width: 640px;
+    }
+
+    #footer {
+      color: #ffffff;
+      font-size: x-small;
+      text-align: right;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+
+    .hack {
+      padding: 15px 5px 15px 5px;
+      background-color: #4682b4;
+    }
+
+    .heading {
+      color: #ffffff;
+      font-size: xx-large;
+      font-weight: bold;
+    }
+
+    .subheading {
+      color: #ffffff;
+      font-size: small;
+      text-align: right;
+    }
+
+    .stats {
+      color: #225588;
+      font-size: x-small;
+    }
+
+    .tasks {
+      width: 100%;
+    }
+
+    .date {
+      width: 100px;
+    }
+
+    .priority {
+      width: 100px;
+    }
+
+    .state {
+      width: 50px;
+    }
+
+    .description {
+      text-align: justify;
+    }
+
+    .finished {
+      background-color: #add8e6;
+    }
+
+    .finished:hover {
+      background-color: #4682b4;
+    }
+  -->
+  </style>
+</head>
+
+<body>
+
+<div id="header">
+  <table>
+    <tr>
+      <td class="hack">
+        <div class="heading">$heading</div>
+        <div class="subheading">$TIMESTAMP</div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div id="middle"><div id="content">
+END_BLUE
+  }
+  else {
+    return << "END_DARK";
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
                       "http://www.w3.org/TR/html4/strict.dtd">
 <html>
@@ -177,7 +324,6 @@ sub header {
 
     a {
       color: #1e90ff;
-      color: #4682b4;
       text-decoration: none;
     }
 
@@ -280,16 +426,26 @@ sub header {
 </div>
 
 <div id="content">
-END_HEADER
-  }
-  else {
-    exit_with_error("Not implemented yet.", 22); 
+END_DARK
   }
 }
 
 # Return the document footer:
 sub footer {
-  return << "END_FOOTER";
+  if ($design eq 'blue') {
+    return << "END_BLUE"
+</div></div>
+
+<div id="footer">
+  generated using <a href="$HOMEPAGE">$NAME $VERSION</a>
+</div>
+
+</body>
+</html>
+END_BLUE
+  }
+  else {
+    return << "END_DARK";
 </div>
 
 <div id="footer">
@@ -298,7 +454,8 @@ sub footer {
 
 </body>
 </html>
-END_FOOTER
+END_DARK
+  }
 }
 
 # Return the beginning of new group:
@@ -470,8 +627,8 @@ GetOptions(
   'savefile|s=s'   => sub { $savefile       = $_[1] },
   'output|o=s'     => sub { $outfile        = $_[1] },
   'heading|H=s'    => sub { $heading        = $_[1] },
-  'black|B'        => sub { $design         = 'black' },
-  'white|W'        => sub { $design         = 'white' },
+  'dark|D'         => sub { $design         = 'dark' },
+  'blue|B'         => sub { $design         = 'blue' },
 );
 
 # Trim group option:
