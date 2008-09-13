@@ -26,7 +26,7 @@ use Getopt::Long;
 
 # General script information:
 our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.0.5';                          # Script version.
+our $VERSION   = '2.1.0';                          # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
@@ -643,6 +643,11 @@ GetOptions(
   'help|h'         => sub { display_help();    exit 0 },
   'version|v'      => sub { display_version(); exit 0 },
 );
+
+# Detect superfluous options:
+if (scalar(@ARGV) != 0) {
+  exit_with_error("Invalid option `$ARGV[0]'.", 22);
+}
 
 # Trim group option:
 if (my $value = $args{group}) {
