@@ -461,7 +461,9 @@ END_DARK
 # Return the beginning of new group:
 sub begin_group {
   my ($group, $tasks, $done) = @_;
-  my $stats = "$tasks tasks, " . ($tasks - $done) . " unfinished";
+  my $stats = sprintf "%d task%s, %d unfinished",
+                      $tasks, (($tasks != 1) ? 's' : ''),
+                      $tasks - $done;
 
   return << "END_BEGIN_GROUP";
 <h2><a name="$group"></a>$group <span class="stats">$stats</span></h2>
