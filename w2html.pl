@@ -98,36 +98,57 @@ sub write_tasks {
   my $stats = {};
   my @data;
 
+  # Load matching tasks:
   load_selection(\@data, undef, $args);
+
+  # Get task list statistics:
   get_stats($stats);
 
+  # Open the selected output for writing:
   if (open(SAVEFILE, ">$outfile")) {
+
+    # Check whether the list is not empty:
     if (@data) {
       my $group = '';
 
+      # Write header:
       print SAVEFILE header();
 
+      # Process each task:
       foreach my $line (sort @data) {
+
+        # Parse the task record:
         $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
 
+        # Write heading when group changes:
         if (lc($1) ne $group) {
+          # Write group closing if opened:
           print SAVEFILE close_group() if $group;
 
+          # Translate the group name to lower case:
           $group = lc($1);
 
+          # Write group beginning:
           print SAVEFILE begin_group($1, $stats->{$group}->{tasks},
                                          $stats->{$group}->{done});
         }
 
+        # Write task entry:
         print SAVEFILE group_item($2, $3, $4, $5);
       }
 
+      # Write group closing:
       print SAVEFILE close_group();
+
+      # Write footer:
       print SAVEFILE footer();
+
+      # Close the outpt:
       close(SAVEFILE);
     }
   }
   else {
+    # Report failure and exit:
     exit_with_error("Unable to write to `$outfile'.", 13);
   }
 }
@@ -507,6 +528,7 @@ sub load_selection {
   my ($selected, $rest, $args) = @_;
   my  $reserved  = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
 
+  # Use default pattern when none is provided:
   my $group    = $args->{group}    || '[^:]*';
   my $date     = $args->{date}     || '[^:]*';
   my $priority = $args->{priority} || '[1-5]';
@@ -514,10 +536,16 @@ sub load_selection {
   my $task     = $args->{task}     || '';
   my $id       = $args->{id}       || '\d+';
 
+  # Create the mask:
   my $mask     = "^$group:$date:$priority:$state:.*$task.*:$id\$";
 
+  # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
+
+    # Process each line:
     while (my $line = <SAVEFILE>) {
+
+      # Check whether the line matches given pattern:
       if ($line =~ /$mask/i) {
         push(@$selected, $line);
       }
@@ -526,9 +554,11 @@ sub load_selection {
       }
     }
 
+    # Close the save file:
     close(SAVEFILE);
   }
   else {
+    # Report failure and exit:
     exit_with_error("Unable to read from `$savefile'.", 13);
   }
 }
@@ -540,11 +570,17 @@ sub get_stats {
   my $tasks  = 0;
   my $undone = 0;
 
+  # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
+
+    # Process each line:
     while (my $line = <SAVEFILE>) {
+
+      # Parse the task record:
       if ($line =~ /^([^:]*):[^:]*:[1-5]:([ft]):.*:\d+$/) {
         my $group = lc($1);
 
+        # Count group statistics:
         if ($stats->{$group}) {
           $stats->{$group}->{tasks} += 1;
           $stats->{$group}->{done}  += ($2 eq 't') ? 1 : 0;
@@ -555,12 +591,14 @@ sub get_stats {
           $groups++;
         }
 
+        # Count overall statistics:
         $tasks++;
         $undone++ unless ($2 eq 't');
       }
     }
   }
 
+  # Return overall statistics:
   return $groups, $tasks, $undone;
 }
 

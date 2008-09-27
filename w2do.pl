@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# w2do -- a simple text-based todo manager
+# w2do, a simple text-based todo manager
 # Copyright (C) 2008 Jaromir Hradilek
 
 # This program is  free software:  you can redistribute it and/or modify it
@@ -122,15 +122,20 @@ END_VERSION
 sub display_groups {
   my $stats = {};
 
+  # Get task list statistics:
   get_stats($stats);
 
+  # Check whether the list is not empty:
   if (%$stats) {
+
+    # Display the list of all groups:
     print join(', ', map { "$_ (" . $stats->{$_}->{done}  . '/'
                                   . $stats->{$_}->{tasks} . ')' }
                      sort keys(%$stats)),
           "\n";
   }
   else {
+    # Report empty list:
     print "The task list is empty.\n" if $verbose;
   }
 }
@@ -139,19 +144,30 @@ sub display_groups {
 sub display_statistics {
   my $stats = {};
   my $per;
+
+  # Get task list statistics:
   my ($groups, $tasks, $undone) = get_stats($stats);
 
+  # Display overall statistics:
   printf "%d group%s, %d task%s, %d unfinished\n\n",
          $groups, (($groups != 1) ? 's' : ''),
          $tasks,  (($tasks  != 1) ? 's' : ''),
          $undone;
 
+  # Process each group:
   foreach my $group (sort (keys %$stats)) {
+
+    # Count group percentage:
     $per = int($stats->{$group}->{done} * 100 / $stats->{$group}->{tasks});
+
+    # Display group progress:
     printf "%-11s %s %d%%\n", "$group:", draw_progressbar($per), $per;
   }
 
+  # Count overall percentage:
   $per = $tasks ? int(($tasks - $undone) * 100 / $tasks) : 0;
+
+  # Display overall progress:
   printf "---\n%-11s %s %d%%\n", "total:", draw_progressbar($per), $per;
 }
 
@@ -160,45 +176,58 @@ sub display_tasks {
   my $args = shift;
   my @data;
 
+  # Load matching tasks:
   load_selection(\@data, undef, $args);
 
+  # Check whether the list is not empty:
   if (@data) {
+    my $current = '';
+    my ($id, $group, $date, $priority, $state, $task);
+
+    # Prepare table layout:
     my $divider = '-'x $Text::Wrap::columns . "\n";
     my $border  = '='x $Text::Wrap::columns . "\n";
     my $caption = " id    group       date        pri  sta  task\n";
     my $format  = " %-4s  %-10s  %-10s   %s    %s   %s\n";
     my $indent  = ' 'x 41;
 
-    my $current = '';
-    my ($id, $group, $date, $priority, $state, $task);
-
+    # Set up the line wrapper:
     $Text::Wrap::columns++;
 
+    # Display header:
     print $border, $caption, $border;
 
+    # Process each task:
     foreach my $line (sort @data) {
+
+      # Parse the task record:
       $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
 
+      # Display divider when group changes:
       if (lc($1) ne $current) {
         print $divider if $group;
         $current = lc($1);
       }
 
+      # If possible, use relative date reference:
       if ($2 eq date_to_string(time)) { $date = 'today'; }
       elsif ($2 eq date_to_string(time - 86400)) { $date = 'yesterday'; }
       elsif ($2 eq date_to_string(time + 86400)) { $date = 'tomorrow';  }
       else { $date = $2; }
 
+      # Prepare the rest of the task entry:
       $id       = $6;
       $group    = $1;
       $priority = $3;
       $state    = ($4 eq 'f') ? '-' : 'f';
       $task     =  wrap($indent, $indent, $5); $task =~ s/\s+//;
 
+      # Display the task entry:
       printf($format, $id, $group, $date, $priority, $state, $task);
     }
   }
   else {
+    # Report empty list:
     print "No matching task found.\n" if $verbose;
   }
 }
@@ -207,6 +236,7 @@ sub display_tasks {
 sub add_task {
   my $args     = shift;
 
+  # Use default value when none is provided:
   my $group    = $args->{group}    || 'general';
   my $date     = $args->{date}     || 'anytime';
   my $priority = $args->{priority} || '3';
@@ -214,9 +244,13 @@ sub add_task {
   my $task     = $args->{task}     || '';
   my $id       = choose_id();
 
+  # Create the task record:
   my @data     = ("$group:$date:$priority:$state:$task:$id\n"); 
 
+  # Add data to the end of the save file:
   add_data(\@data);
+
+  # Report success:
   print "Task has been successfully added with id $id.\n" if $verbose;
 }
 
@@ -224,7 +258,10 @@ sub add_task {
 sub change_task {
   my (@selected, @data);
 
+  # Load selected task:
   load_selection(\@selected, \@data, { id => shift });
+
+  # Change selected item:
   change_selection(\@selected, \@data, shift);
 }
 
@@ -232,7 +269,10 @@ sub change_task {
 sub remove_task {
   my (@selected, @data);
 
+  # Load selected task:
   load_selection(\@selected, \@data, { id => shift });
+
+  # Remove selected item:
   remove_selection(\@selected, \@data);
 }
 
@@ -240,7 +280,10 @@ sub remove_task {
 sub change_group {
   my (@selected, @data);
 
+  # Load selected tasks:
   load_selection(\@selected, \@data, { group => shift });
+
+  # Change selected items:
   change_selection(\@selected, \@data, shift);
 }
 
@@ -248,7 +291,10 @@ sub change_group {
 sub remove_group {
   my (@selected, @data);
 
+  # Load selected tasks:
   load_selection(\@selected, \@data, { group => shift });
+
+  # Remove selected items:
   remove_selection(\@selected, \@data);
 }
 
@@ -256,7 +302,10 @@ sub remove_group {
 sub purge_group {
   my (@selected, @data);
 
+  # Load selected tasks:
   load_selection(\@selected, \@data, { group => shift });
+
+  # Purge selected items:
   purge_selection(\@selected, \@data);
 }
 
@@ -264,7 +313,10 @@ sub purge_group {
 sub change_date {
   my (@selected, @data);
 
+  # Load selected tasks:
   load_selection(\@selected, \@data, { date => shift });
+
+  # Change selected items:
   change_selection(\@selected, \@data, shift);
 }
 
@@ -272,7 +324,10 @@ sub change_date {
 sub remove_date {
   my (@selected, @data);
 
+  # Load selected tasks:
   load_selection(\@selected, \@data, { date => shift });
+
+  # Remove selected items:
   remove_selection(\@selected, \@data);
 }
 
@@ -280,7 +335,10 @@ sub remove_date {
 sub purge_date {
   my (@selected, @data);
 
+  # Load selected tasks:
   load_selection(\@selected, \@data, { date => shift });
+
+  # Purge selected items:
   purge_selection(\@selected, \@data);
 }
 
@@ -288,7 +346,10 @@ sub purge_date {
 sub change_old {
   my (@selected, @data);
 
+  # Load selected tasks:
   load_old(\@selected, \@data);
+
+  # Change selected items:
   change_selection(\@selected, \@data, shift);
 }
 
@@ -296,7 +357,10 @@ sub change_old {
 sub remove_old {
   my (@selected, @data);
 
+  # Load selected tasks:
   load_old(\@selected, \@data);
+
+  # Change selected items:
   remove_selection(\@selected, \@data);
 }
 
@@ -304,7 +368,10 @@ sub remove_old {
 sub purge_old {
   my (@selected, @data);
 
+  # Load selected tasks:
   load_old(\@selected, \@data);
+
+  # Purge selected tasks:
   purge_selection(\@selected, \@data);
 }
 
@@ -312,7 +379,10 @@ sub purge_old {
 sub change_all {
   my (@selected, @data);
 
+  # Load all tasks:
   load_selection(\@selected, \@data);
+
+  # Change all items:
   change_selection(\@selected, \@data, shift);
 }
 
@@ -320,7 +390,10 @@ sub change_all {
 sub remove_all {
   my (@selected, @data);
 
+  # Load all tasks:
   load_selection(\@selected, \@data);
+
+  # Remove all items:
   remove_selection(\@selected, \@data);
 }
 
@@ -328,16 +401,23 @@ sub remove_all {
 sub purge_all {
   my (@selected, @data);
 
+  # Load all tasks:
   load_selection(\@selected, \@data);
+
+  # Purge all tasks:
   purge_selection(\@selected, \@data);
 }
 
 # Revert last action:
 sub revert_last_action {
+
+  # Try to restore data from the backup file:
   if (move("$savefile$backext", $savefile)) {
+    # Report success:
     print "Last action has been successfully reverted.\n" if $verbose;
   }
   else {
+    # If not present, we are probably at oldest change:
     print "Already at oldest change.\n" if $verbose;
   }
 }
@@ -346,10 +426,19 @@ sub revert_last_action {
 sub change_selection {
   my ($selected, $data, $args) = @_;
 
+  # Check whether the selection is not empty:
   if (@$selected) {
+
+    # Check whether the changed item is suplied:
     if (%$args) {
+
+      # Process each item:
       foreach my $item (@$selected) {
+
+        # Parse the task record:
         if ($item =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/) {
+
+          # Use existing value when none is supplied:
           my $group    = $args->{group}    || $1;
           my $date     = $args->{date}     || $2;
           my $priority = $args->{priority} || $3;
@@ -357,18 +446,24 @@ sub change_selection {
           my $task     = $args->{task}     || $5;
           my $id       = $6;
 
+          # Update the task record:
           push(@$data, "$group:$date:$priority:$state:$task:$id\n");
         }
       }
       
+      # Store data to the save file:
       save_data($data);
+
+      # Report success:
       print "Selected tasks have been successfully changed.\n" if $verbose;
     }
     else {
+      # Report missing option:
       print "You have to specify what to change.\n" if $verbose;
     }
   }
   else {
+    # Report empty selection:
     print "No matching task found.\n" if $verbose;
   }
 }
@@ -377,11 +472,17 @@ sub change_selection {
 sub remove_selection {
   my ($selected, $data) = @_;
 
+  # Check whether the selection is not empty:
   if (@$selected) {
+
+    # Store data to the save file:
     save_data($data);
+
+    # Report success:
     print "Selected tasks have been successfully removed.\n" if $verbose;
   }
   else {
+    # Report empty selection:
     print "No matching task found.\n" if $verbose;
   }
 }
@@ -390,17 +491,26 @@ sub remove_selection {
 sub purge_selection {
   my ($selected, $data) = @_;
 
+  # Check whether the selection is not empty:
   if (@$selected) {
+
+    # Process each item:
     foreach my $item (@$selected) {
+
+      # Add unfinished tasks back to the list:
       if ($item =~ /^[^:]*:[^:]*:[1-5]:f:.*:\d+$/) {
         push(@$data, $item);
       }
     }
 
+    # Store data to the save file:
     save_data($data);
+
+    # Report success:
     print "Selected tasks have been successfully purged.\n" if $verbose;
   }
   else {
+    # Report empty selection:
     print "No matching task found.\n" if $verbose;
   }
 }
@@ -410,9 +520,11 @@ sub load_selection {
   my ($selected, $rest, $args) = @_;
   my  $reserved  = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
 
+  # Escape reserved characters:
   $args->{group} =~ s/($reserved)/\\$1/g if $args->{group};
   $args->{task}  =~ s/($reserved)/\\$1/g if $args->{task};
 
+  # Use default pattern when none is provided:
   my $group      = $args->{group}    || '[^:]*';
   my $date       = $args->{date}     || '[^:]*';
   my $priority   = $args->{priority} || '[1-5]';
@@ -420,10 +532,16 @@ sub load_selection {
   my $task       = $args->{task}     || '';
   my $id         = $args->{id}       || '\d+';
 
+  # Create the mask:
   my $mask       = "^$group:$date:$priority:$state:.*$task.*:$id\$";
 
+  # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
+
+    # Process each line:
     while (my $line = <SAVEFILE>) {
+
+      # Check whether the line matches given pattern:
       if ($line =~ /$mask/i) {
         push(@$selected, $line);
       }
@@ -432,6 +550,7 @@ sub load_selection {
       }
     }
 
+    # Close the save file:
     close(SAVEFILE);
   }
 }
@@ -440,10 +559,16 @@ sub load_selection {
 sub load_old {
   my ($selected, $rest) = @_;
 
+  # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
-    while (my $line = <SAVEFILE>) {
-      $line =~  /^[^:]*:([^:]*):[1-5]:[ft]:.*:\d+$/;
 
+    # Process each line:
+    while (my $line = <SAVEFILE>) {
+
+      # Parse the task record:
+      $line =~ /^[^:]*:([^:]*):[1-5]:[ft]:.*:\d+$/;
+
+      # Check whether the line matches given pattern:
       if ("$1" lt date_to_string(time) && "$1" ne 'anytime') {
         push(@$selected, $line);
       }
@@ -452,6 +577,7 @@ sub load_old {
       }
     }
 
+    # Close the save file:
     close(SAVEFILE);
   }
 }
@@ -460,16 +586,22 @@ sub load_old {
 sub save_data {
   my $data = shift;
 
+  # Backup the save file:
   copy($savefile, "$savefile$backext") if (-r $savefile);
 
+  # Open the save file for writing:
   if (open(SAVEFILE, ">$savefile")) {
+
+    # Write data to the save file:
     foreach my $item (@$data) {
       print SAVEFILE $item;
     }
 
+    # Close the save file:
     close(SAVEFILE);
   }
   else {
+    # Report failure and exit:
     exit_with_error("Unable to write to `$savefile'.", 13);
   }
 }
@@ -478,16 +610,22 @@ sub save_data {
 sub add_data {
   my $data = shift;
 
+  # Backup the save file:
   copy($savefile, "$savefile$backext") if (-r $savefile);
 
+  # Open the save file for appending:
   if (open(SAVEFILE, ">>$savefile")) {
+
+    # Write data to the save file:
     foreach my $item (@$data) {
       print SAVEFILE $item;
     }
 
+    # Close the save file:
     close(SAVEFILE);
   }
   else {
+    # Report failure and exit:
     exit_with_error("Unable to write to `$savefile'.", 13);
   }
 }
@@ -499,11 +637,17 @@ sub get_stats {
   my $tasks  = 0;
   my $undone = 0;
 
+  # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
+
+    # Process each line:
     while (my $line = <SAVEFILE>) {
+
+      # Parse the task record:
       if ($line =~ /^([^:]*):[^:]*:[1-5]:([ft]):.*:\d+$/) {
         my $group = lc($1);
 
+        # Count group statistics:
         if ($stats->{$group}) {
           $stats->{$group}->{tasks} += 1;
           $stats->{$group}->{done}  += ($2 eq 't') ? 1 : 0;
@@ -514,33 +658,41 @@ sub get_stats {
           $groups++;
         }
 
+        # Count overall statistics:
         $tasks++;
         $undone++ unless ($2 eq 't');
       }
     }
   }
 
+  # Return overall statistics:
   return $groups, $tasks, $undone;
 }
 
 # Choose first available ID:
 sub choose_id {
-  my @used = ();
-  my $id   = 1;
+  my @used   = ();
+  my $chosen = 1;
 
+  # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
+
+    # Build the list of used IDs:
     while (my $line = <SAVEFILE>) {
       push(@used, int($1)) if ($line =~ /:(\d+)$/);
     }
 
+    # Close the save file:
     close(SAVEFILE);
 
-    foreach my $index (sort {$a <=> $b} @used) {
-      $id++ if ($id == $index);
+    # Find first unused ID:
+    foreach my $id (sort {$a <=> $b} @used) {
+      $chosen++ if ($chosen == $id);
     }
   }
 
-  return $id;
+  # Return the result:
+  return $chosen;
 }
 
 # Translate due date alias to mask:

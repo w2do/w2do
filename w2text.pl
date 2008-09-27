@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# w2text -- a plain text exporter for w2do
+# w2text, a plain text exporter for w2do
 # Copyright (C) 2008 Jaromir Hradilek
 
 # This program is  free software:  you can redistribute it and/or modify it
@@ -93,29 +93,42 @@ sub write_tasks {
   my ($outfile, $args) = @_;
   my @data;
 
+  # Load matching tasks:
   load_selection(\@data, undef, $args);
 
+  # Open the selected output for writing:
   if (open(SAVEFILE, ">$outfile")) {
+
+    # Check whether the list is not empty:
     if (@data) {
       my ($group, $task) = '';
       
+      # Process each task:
       foreach my $line (sort @data) {
+
+        # Parse the task record:
         $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
 
+        # Write heading when group changes:
         if (lc($1) ne $group) {
           print SAVEFILE "\n" if $group;
           print SAVEFILE "$1:\n\n";
           $group = lc($1);
         }
 
+        # Create the task entry:
         $task = ($4 eq 't') ? "$5 (OK)\n" : "$5\n";
+
+        # Write the task entry:
         print SAVEFILE wrap('  * ', '    ', $task);
       }
 
+      # Close the output:
       close(SAVEFILE);
     }
   }
   else {
+    # Report failure and exit:
     exit_with_error("Unable to write to `$outfile'.", 13);
   }
 }
@@ -125,9 +138,11 @@ sub load_selection {
   my ($selected, $rest, $args) = @_;
   my  $reserved  = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
 
+  # Escape reserved characters:
   $args->{group} =~ s/($reserved)/\\$1/g if $args->{group};
   $args->{task}  =~ s/($reserved)/\\$1/g if $args->{task};
 
+  # Use default pattern when none is provided:
   my $group    = $args->{group}    || '[^:]*';
   my $date     = $args->{date}     || '[^:]*';
   my $priority = $args->{priority} || '[1-5]';
@@ -135,10 +150,16 @@ sub load_selection {
   my $task     = $args->{task}     || '';
   my $id       = $args->{id}       || '\d+';
 
+  # Create the mask:
   my $mask     = "^$group:$date:$priority:$state:.*$task.*:$id\$";
 
+  # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
+
+    # Process each line:
     while (my $line = <SAVEFILE>) {
+
+      # Check whether the line matches given pattern:
       if ($line =~ /$mask/i) {
         push(@$selected, $line);
       }
@@ -147,9 +168,11 @@ sub load_selection {
       }
     }
 
+    # Close the save file:
     close(SAVEFILE);
   }
   else {
+    # Report failure and exit:
     exit_with_error("Unable to read from `$savefile'.", 13);
   }
 }
