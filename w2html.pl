@@ -528,6 +528,10 @@ sub load_selection {
   my ($selected, $rest, $args) = @_;
   my  $reserved  = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
 
+  # Escape reserved characters:
+  $args->{group} =~ s/($reserved)/\\$1/g if $args->{group};
+  $args->{task}  =~ s/($reserved)/\\$1/g if $args->{task};
+
   # Use default pattern when none is provided:
   my $group    = $args->{group}    || '[^:]*';
   my $date     = $args->{date}     || '[^:]*';
