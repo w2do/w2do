@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# w2html -- a HTML exporter for w2do
+# w2html, a HTML exporter for w2do
 # Copyright (C) 2008 Jaromir Hradilek
 
 # This program is  free software:  you can redistribute it and/or modify it

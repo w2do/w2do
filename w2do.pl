@@ -22,6 +22,7 @@ use Text::Wrap;
 use File::Copy;
 use File::Basename;
 use File::Spec::Functions;
+use Term::ANSIColor;
 use Getopt::Long;
 
 # General script information:
@@ -31,11 +32,15 @@ our $VERSION   = '2.1.0';                          # Script version.
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
 our $savefile  = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
-our $backext   = '.bak';
-our $verbose   = 1;
+our $backext   = '.bak';                           # Backup file extension.
+our $coloured  = 0;                                # Colour output setup.
+our $verbose   = 1;                                # Verbosity level.
 
 # Appearance settings:
 $Text::Wrap::columns = $ENV{W2DO_WIDTH} || 75;     # Default table width.
+our $headcol   = 'black on_green';                 # Table header colour.
+our $donecol   = 'green';                          # Done task colour.
+our $undonecol = 'reset';                          # Undone task colour.
 
 # Command line options:
 my $action     = 0;                                # Default action.
@@ -102,6 +107,8 @@ Additional options:
   -s, --savefile file      use selected file instead of the default ~/.w2do
   -w, --width width        use selected line width; the minimal value is 75
   -q, --quiet              avoid displaying messages that are not necessary
+  -C, --colour             use coloured output instead of the default plain
+                           text version
 END_HELP
 }
 
@@ -184,18 +191,20 @@ sub display_tasks {
     my $current = '';
     my ($id, $group, $date, $priority, $state, $task);
 
-    # Prepare table layout:
-    my $divider = '-'x $Text::Wrap::columns . "\n";
-    my $border  = '='x $Text::Wrap::columns . "\n";
-    my $caption = " id    group       date        pri  sta  task\n";
+    # Prepare the table layout:
     my $format  = " %-4s  %-10s  %-10s   %s    %s   %s\n";
-    my $indent  = ' 'x 41;
+    my $caption = " id    group       date        pri  sta  task" .
+                  ' 'x ($Text::Wrap::columns - 45) . "\n";
+    my $divider = '-'x  $Text::Wrap::columns . "\n";
+    my $border  = '='x  $Text::Wrap::columns . "\n";
+    my $indent  = ' 'x  41;
 
     # Set up the line wrapper:
     $Text::Wrap::columns++;
 
-    # Display header:
-    print $border, $caption, $border;
+    # Display table header:
+    $coloured ? print colored ($caption, $headcol)
+              : print $border, $caption, $border;
 
     # Process each task:
     foreach my $line (sort @data) {
@@ -203,9 +212,14 @@ sub display_tasks {
       # Parse the task record:
       $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
 
-      # Display divider when group changes:
+      # Check whether the group has changed:
       if (lc($1) ne $current) {
-        print $divider if $group;
+        # Display the divider unless the first group is being listed:
+        if ($group) {
+          $coloured ? print colored ($caption, $headcol) : print $divider;
+        }
+
+        # Remember the current group:
         $current = lc($1);
       }
 
@@ -223,7 +237,9 @@ sub display_tasks {
       $task     =  wrap($indent, $indent, $5); $task =~ s/\s+//;
 
       # Display the task entry:
+      print  color (($state eq '-') ? $undonecol : $donecol) if $coloured;
       printf($format, $id, $group, $date, $priority, $state, $task);
+      print  color 'reset' if $coloured;
     }
   }
   else {
@@ -763,6 +779,7 @@ GetOptions(
   # Additional options:
   'quiet|q'        => sub { $verbose             = 0 },
   'verbose|V'      => sub { $verbose             = 1 },
+  'colour|color|C' => sub { $coloured            = 1 },
   'savefile|s=s'   => sub { $savefile            = $_[1] },
   'width|w=i'      => sub { $Text::Wrap::columns = $_[1] },
 
