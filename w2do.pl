@@ -27,7 +27,7 @@ use Getopt::Long;
 
 # General script information:
 our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.1.0';                          # Script version.
+our $VERSION   = '2.1.1';                          # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
@@ -38,9 +38,9 @@ our $verbose   = 1;                                # Verbosity level.
 
 # Appearance settings:
 $Text::Wrap::columns = $ENV{W2DO_WIDTH} || 75;     # Default table width.
-our $headcol   = 'black on_green';                 # Table header colour.
+our $headcol   = 'bold white on_green';            # Table header colour.
 our $donecol   = 'green';                          # Done task colour.
-our $undonecol = 'reset';                          # Undone task colour.
+our $todaycol  = 'bold';                           # Today's task colour.
 
 # Command line options:
 my $action     = 0;                                # Default action.
@@ -236,10 +236,16 @@ sub display_tasks {
       $state    = ($4 eq 'f') ? '-' : 'f';
       $task     =  wrap($indent, $indent, $5); $task =~ s/\s+//;
 
+      # Set up colours:
+      print color $donecol  if $coloured && $state eq 'f';
+      print color $todaycol if $coloured && $state ne 'f'
+                                         && $date  eq 'today';
+
       # Display the task entry:
-      print  color (($state eq '-') ? $undonecol : $donecol) if $coloured;
       printf($format, $id, $group, $date, $priority, $state, $task);
-      print  color 'reset' if $coloured;
+
+      # Reset colours:
+      print color 'reset'   if $coloured;
     }
   }
   else {
