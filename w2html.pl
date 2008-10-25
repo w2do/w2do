@@ -25,7 +25,7 @@ use Getopt::Long;
 
 # General script information:
 our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.1.0';                          # Script version.
+our $VERSION   = '2.1.1';                          # Script version.
 our $HOMEPAGE  = 'http://code.google.com/p/w2do/'; # Project homepage.
 
 # Global script settings:
