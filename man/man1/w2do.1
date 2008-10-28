@@ -9,7 +9,7 @@
 .\" A copy  of the license is included  as a file called FDL  in the main
 .\" directory of the w2do source package.
 .\"
-.TH W2DO 1 "24 October 2008" "Version 2.1.1"
+.TH W2DO 1 "28 October 2008" "Version 2.1.1"
 .SH NAME
 w2do \- a simple text-based todo manager
 .SH SYNOPSIS
@@ -205,8 +205,14 @@ the minimal value is
 .BR \-q ", " \-\-quiet
 Avoid displaying messages that are not necessary.
 .TP
+.BR \-V ", " \-\-verbose
+Display all messages; this is the default option.
+.TP
 .BR \-C ", " \-\-colour ", " \-\-color
 Use coloured output instead of the default plain text version.
+.TP
+.BR \-P ", " \-\-plain
+Use plain text output (no colours); this is the default option.
 .SH ENVIRONMENT
 .TP
 .B W2DO_SAVEFILE

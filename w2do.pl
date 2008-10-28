@@ -785,6 +785,7 @@ GetOptions(
   # Additional options:
   'quiet|q'        => sub { $verbose             = 0 },
   'verbose|V'      => sub { $verbose             = 1 },
+  'plain|P'        => sub { $coloured            = 0 },
   'colour|color|C' => sub { $coloured            = 1 },
   'savefile|s=s'   => sub { $savefile            = $_[1] },
   'width|w=i'      => sub { $Text::Wrap::columns = $_[1] },
