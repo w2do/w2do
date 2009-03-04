@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # w2do, a simple text-based todo manager
-# Copyright (C) 2008 Jaromir Hradilek
+# Copyright (C) 2008, 2009 Jaromir Hradilek
 
 # This program is  free software:  you can redistribute it and/or modify it
 # under  the terms  of the  GNU General Public License  as published by the
@@ -26,8 +26,8 @@ use Term::ANSIColor;
 use Getopt::Long;
 
 # General script information:
-our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.1.1';                          # Script version.
+use constant NAME    => basename($0, '.pl');       # Script name.
+use constant VERSION => '2.1.1';                   # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
@@ -35,16 +35,14 @@ our $savefile  = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
 our $backext   = '.bak';                           # Backup file extension.
 our $coloured  = 0;                                # Colour output setup.
 our $verbose   = 1;                                # Verbosity level.
-
-# Appearance settings:
-$Text::Wrap::columns = $ENV{W2DO_WIDTH} || 75;     # Default table width.
 our $headcol   = 'bold white on_green';            # Table header colour.
 our $donecol   = 'green';                          # Done task colour.
 our $todaycol  = 'bold';                           # Today's task colour.
+$Text::Wrap::columns = $ENV{W2DO_WIDTH} || 75;     # Default table width.
 
 # Command line options:
-my $action     = 0;                                # Default action.
 my $identifier = undef;                            # Task identifier.
+my $action     = 0;                                # Default action.
 my %args       = ();                               # Specifying options.
 
 # Signal handlers:
@@ -54,6 +52,9 @@ $SIG{__WARN__} = sub {
 
 # Display script usage:
 sub display_help {
+  my $NAME = NAME;
+
+  # Print the message:
   print << "END_HELP";
 Usage: $NAME [-l] [-t task] [-g group] [-d date] [-p priority] [-f|-u]
        $NAME -a task [-g group] [-d date] [-p priority] [-f|-u]
@@ -114,10 +115,13 @@ END_HELP
 
 # Display script version:
 sub display_version {
+  my ($NAME, $VERSION) = (NAME, VERSION);
+
+  # Print the message:
   print << "END_VERSION";
 $NAME $VERSION
 
-Copyright (C) 2008 Jaromir Hradilek
+Copyright (C) 2008, 2009 Jaromir Hradilek
 This program is free software; see the source for copying conditions. It is
 distributed in the hope  that it will be useful,  but WITHOUT ANY WARRANTY;
 without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PAR-
@@ -134,8 +138,7 @@ sub display_groups {
 
   # Check whether the list is not empty:
   if (%$stats) {
-
-    # Display the list of all groups:
+    # Display the list of groups:
     print join(', ', map { "$_ (" . $stats->{$_}->{done}  . '/'
                                   . $stats->{$_}->{tasks} . ')' }
                      sort keys(%$stats)),
@@ -163,7 +166,6 @@ sub display_statistics {
 
   # Process each group:
   foreach my $group (sort (keys %$stats)) {
-
     # Count group percentage:
     $per = int($stats->{$group}->{done} * 100 / $stats->{$group}->{tasks});
 
@@ -208,7 +210,6 @@ sub display_tasks {
 
     # Process each task:
     foreach my $line (sort @data) {
-
       # Parse the task record:
       $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
 
@@ -432,7 +433,6 @@ sub purge_all {
 
 # Revert last action:
 sub revert_last_action {
-
   # Try to restore data from the backup file:
   if (move("$savefile$backext", $savefile)) {
     # Report success:
@@ -450,16 +450,12 @@ sub change_selection {
 
   # Check whether the selection is not empty:
   if (@$selected) {
-
     # Check whether the changed item is suplied:
     if (%$args) {
-
       # Process each item:
       foreach my $item (@$selected) {
-
         # Parse the task record:
         if ($item =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/) {
-
           # Use existing value when none is supplied:
           my $group    = $args->{group}    || $1;
           my $date     = $args->{date}     || $2;
@@ -496,7 +492,6 @@ sub remove_selection {
 
   # Check whether the selection is not empty:
   if (@$selected) {
-
     # Store data to the save file:
     save_data($data);
 
@@ -515,10 +510,8 @@ sub purge_selection {
 
   # Check whether the selection is not empty:
   if (@$selected) {
-
     # Process each item:
     foreach my $item (@$selected) {
-
       # Add unfinished tasks back to the list:
       if ($item =~ /^[^:]*:[^:]*:[1-5]:f:.*:\d+$/) {
         push(@$data, $item);
@@ -559,15 +552,15 @@ sub load_selection {
 
   # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
-
     # Process each line:
     while (my $line = <SAVEFILE>) {
-
       # Check whether the line matches given pattern:
       if ($line =~ /$mask/i) {
+        # Add line to the selected items list:
         push(@$selected, $line);
       }
       else {
+        # Add line to the other items list:
         push(@$rest, $line);
       }
     }
@@ -583,18 +576,18 @@ sub load_old {
 
   # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
-
     # Process each line:
     while (my $line = <SAVEFILE>) {
-
       # Parse the task record:
       $line =~ /^[^:]*:([^:]*):[1-5]:[ft]:.*:\d+$/;
 
       # Check whether the line matches given pattern:
       if ("$1" lt date_to_string(time) && "$1" ne 'anytime') {
+        # Add line to the selected items list:
         push(@$selected, $line);
       }
       else {
+        # Add line to the other items list:
         push(@$rest, $line);
       }
     }
@@ -613,9 +606,9 @@ sub save_data {
 
   # Open the save file for writing:
   if (open(SAVEFILE, ">$savefile")) {
-
-    # Write data to the save file:
+    # Process each item:
     foreach my $item (@$data) {
+      # Write data to the save file:
       print SAVEFILE $item;
     }
 
@@ -637,9 +630,9 @@ sub add_data {
 
   # Open the save file for appending:
   if (open(SAVEFILE, ">>$savefile")) {
-
-    # Write data to the save file:
+    # Process each item:
     foreach my $item (@$data) {
+      # Write data to the save file:
       print SAVEFILE $item;
     }
 
@@ -661,22 +654,24 @@ sub get_stats {
 
   # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
-
     # Process each line:
     while (my $line = <SAVEFILE>) {
-
       # Parse the task record:
       if ($line =~ /^([^:]*):[^:]*:[1-5]:([ft]):.*:\d+$/) {
         my $group = lc($1);
 
         # Count group statistics:
         if ($stats->{$group}) {
+          # Increment counters:
           $stats->{$group}->{tasks} += 1;
           $stats->{$group}->{done}  += ($2 eq 't') ? 1 : 0;
         }
         else {
+          # Initialize counters:
           $stats->{$group}->{tasks}  = 1;
           $stats->{$group}->{done}   = ($2 eq 't') ? 1 : 0;
+
+          # Increment number of counted groups:
           $groups++;
         }
 
@@ -698,7 +693,6 @@ sub choose_id {
 
   # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
-
     # Build the list of used IDs:
     while (my $line = <SAVEFILE>) {
       push(@used, int($1)) if ($line =~ /:(\d+)$/);
@@ -762,10 +756,10 @@ sub draw_progressbar {
 
 # Display given message and immediately terminate the script:
 sub exit_with_error {
-  my $message = shift || 'An unspecified error has occured.';
+  my $message = shift || 'An unspecified error has occurred.';
   my $retval  = shift || 1;
 
-  print STDERR "$NAME: $message\n";
+  print STDERR NAME . ": $message\n";
   exit $retval;
 }
 

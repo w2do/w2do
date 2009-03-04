@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # w2text, a plain text exporter for w2do
-# Copyright (C) 2008 Jaromir Hradilek
+# Copyright (C) 2008, 2009 Jaromir Hradilek
 
 # This program is  free software:  you can redistribute it and/or modify it
 # under  the terms  of the  GNU General Public License  as published by the
@@ -24,12 +24,12 @@ use File::Spec::Functions;
 use Getopt::Long;
 
 # General script information:
-our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.1.1';                          # Script version.
+use constant NAME    => basename($0, '.pl');       # Script name.
+use constant VERSION => '2.1.1';                   # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
-our $savefile  = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
+our $savefile  = $ENV{W2DO_SAVEFILE}    || catfile($HOMEDIR, '.w2do');
 
 # Appearance settings:
 $Text::Wrap::columns = $ENV{W2DO_WIDTH} || 75;     # Default line width.
@@ -45,6 +45,9 @@ $SIG{__WARN__} = sub {
 
 # Display script usage:
 sub display_help {
+  my $NAME = NAME;
+
+  # Print the message:
   print << "END_HELP";
 Usage: $NAME [-o file] [-s file] [-w width] [-f|-u] [-d date] [-g group]
               [-p priority] [-t task]
@@ -77,10 +80,13 @@ END_HELP
 
 # Display script version:
 sub display_version {
+  my ($NAME, $VERSION) = (NAME, VERSION);
+
+  # Print the message:
   print << "END_VERSION";
 $NAME $VERSION
 
-Copyright (C) 2008 Jaromir Hradilek
+Copyright (C) 2008, 2009 Jaromir Hradilek
 This program is free software; see the source for copying conditions. It is
 distributed in the hope  that it will be useful,  but WITHOUT ANY WARRANTY;
 without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PAR-
@@ -98,14 +104,12 @@ sub write_tasks {
 
   # Open the selected output for writing:
   if (open(SAVEFILE, ">$outfile")) {
-
     # Check whether the list is not empty:
     if (@data) {
       my ($group, $task) = '';
       
       # Process each task:
       foreach my $line (sort @data) {
-
         # Parse the task record:
         $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
 
@@ -155,15 +159,15 @@ sub load_selection {
 
   # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
-
     # Process each line:
     while (my $line = <SAVEFILE>) {
-
       # Check whether the line matches given pattern:
       if ($line =~ /$mask/i) {
+        # Add line to the selected items list:
         push(@$selected, $line);
       }
       else {
+        # Add line to the other items list:
         push(@$rest, $line);
       }
     }
@@ -214,10 +218,10 @@ sub date_to_string {
 
 # Display given message and immediately terminate the script:
 sub exit_with_error {
-  my $message = shift || 'An unspecified error has occured.';
+  my $message = shift || 'An unspecified error has occurred.';
   my $retval  = shift || 1;
 
-  print STDERR "$NAME: $message\n";
+  print STDERR NAME . ": $message\n";
   exit $retval;
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # w2html, a HTML exporter for w2do
-# Copyright (C) 2008 Jaromir Hradilek
+# Copyright (C) 2008, 2009 Jaromir Hradilek
 
 # This program is  free software:  you can redistribute it and/or modify it
 # under  the terms  of the  GNU General Public License  as published by the
@@ -24,16 +24,16 @@ use File::Spec::Functions;
 use Getopt::Long;
 
 # General script information:
-our $NAME      = basename($0, '.pl');              # Script name.
-our $VERSION   = '2.1.1';                          # Script version.
-our $HOMEPAGE  = 'http://code.google.com/p/w2do/'; # Project homepage.
+use constant NAME    => basename($0, '.pl');       # Script name.
+use constant VERSION => '2.1.1';                   # Script version.
 
 # Global script settings:
 our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
-our $TIMESTAMP = localtime(time);
 our $savefile  = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
 our $heading   = $ENV{USERNAME} ? "$ENV{USERNAME}'s task list"
                                 : "current task list";
+our $homepage  = 'http://code.google.com/p/w2do/'; # Project homepage.
+our $timestamp = localtime(time);                  # Time of creation.
 
 # Command line options:
 my $outfile    = '-';                              # Output file name.
@@ -47,6 +47,9 @@ $SIG{__WARN__} = sub {
 
 # Display script usage:
 sub display_help {
+  my $NAME = NAME;
+
+  # Print the message:
   print << "END_HELP";
 Usage: $NAME [-B|-D] [-H heading] [-o file] [-s file] [-f|-u] [-d date]
               [-g group] [-p priority] [-t task]
@@ -81,10 +84,13 @@ END_HELP
 
 # Display script version:
 sub display_version {
+  my ($NAME, $VERSION) = (NAME, VERSION);
+
+  # Print the message:
   print << "END_VERSION";
 $NAME $VERSION
 
-Copyright (C) 2008 Jaromir Hradilek
+Copyright (C) 2008, 2009 Jaromir Hradilek
 This program is free software; see the source for copying conditions. It is
 distributed in the hope  that it will be useful,  but WITHOUT ANY WARRANTY;
 without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PAR-
@@ -106,7 +112,6 @@ sub write_tasks {
 
   # Open the selected output for writing:
   if (open(SAVEFILE, ">$outfile")) {
-
     # Check whether the list is not empty:
     if (@data) {
       my $group = '';
@@ -116,7 +121,6 @@ sub write_tasks {
 
       # Process each task:
       foreach my $line (sort @data) {
-
         # Parse the task record:
         $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
 
@@ -155,6 +159,9 @@ sub write_tasks {
 
 # Return the document header:
 sub header {
+  my ($NAME, $VERSION) = (NAME, VERSION);
+
+  # Decide which design to use:
   if ($design eq 'blue') {
     return << "END_BLUE";
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
@@ -163,7 +170,7 @@ sub header {
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="Generator" content="$NAME $VERSION">
-  <meta name="Date" content="$TIMESTAMP">
+  <meta name="Date" content="$timestamp">
   <title>$heading</title>
   <style type="text/css">
   <!--
@@ -293,7 +300,7 @@ sub header {
     <tr>
       <td class="hack">
         <div class="heading">$heading</div>
-        <div class="subheading">$TIMESTAMP</div>
+        <div class="subheading">$timestamp</div>
       </td>
     </tr>
   </table>
@@ -310,7 +317,7 @@ END_BLUE
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="Generator" content="$NAME $VERSION">
-  <meta name="Date" content="$TIMESTAMP">
+  <meta name="Date" content="$timestamp">
   <title>$heading</title>
   <style type="text/css">
   <!--
@@ -440,7 +447,7 @@ END_BLUE
     <tr>
       <td class="hack">
         <div class="heading">$heading</div>
-        <div class="subheading">$TIMESTAMP</div>
+        <div class="subheading">$timestamp</div>
       </td>
     </tr>
   </table>
@@ -453,12 +460,15 @@ END_DARK
 
 # Return the document footer:
 sub footer {
+  my ($NAME, $VERSION) = (NAME, VERSION);
+
+  # Decide which design to use:
   if ($design eq 'blue') {
     return << "END_BLUE"
 </div></div>
 
 <div id="footer">
-  generated using <a href="$HOMEPAGE">$NAME $VERSION</a>
+  generated using <a href="$homepage">$NAME $VERSION</a>
 </div>
 
 </body>
@@ -470,7 +480,7 @@ END_BLUE
 </div>
 
 <div id="footer">
-  generated using <a href="$HOMEPAGE">$NAME $VERSION</a>
+  generated using <a href="$homepage">$NAME $VERSION</a>
 </div>
 
 </body>
@@ -545,15 +555,15 @@ sub load_selection {
 
   # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
-
     # Process each line:
     while (my $line = <SAVEFILE>) {
-
       # Check whether the line matches given pattern:
       if ($line =~ /$mask/i) {
+        # Add line to the selected items list:
         push(@$selected, $line);
       }
       else {
+        # Add line to the other items list:
         push(@$rest, $line);
       }
     }
@@ -576,22 +586,24 @@ sub get_stats {
 
   # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
-
     # Process each line:
     while (my $line = <SAVEFILE>) {
-
       # Parse the task record:
       if ($line =~ /^([^:]*):[^:]*:[1-5]:([ft]):.*:\d+$/) {
         my $group = lc($1);
 
         # Count group statistics:
         if ($stats->{$group}) {
+          # Increment counters:
           $stats->{$group}->{tasks} += 1;
           $stats->{$group}->{done}  += ($2 eq 't') ? 1 : 0;
         }
         else {
+          # Initialize counters:
           $stats->{$group}->{tasks}  = 1;
           $stats->{$group}->{done}   = ($2 eq 't') ? 1 : 0;
+
+          # Increment number of counted groups:
           $groups++;
         }
 
@@ -643,10 +655,10 @@ sub date_to_string {
 
 # Display given message and immediately terminate the script:
 sub exit_with_error {
-  my $message = shift || 'An unspecified error has occured.';
+  my $message = shift || 'An unspecified error has occurred.';
   my $retval  = shift || 1;
 
-  print STDERR "$NAME: $message\n";
+  print STDERR NAME . ": $message\n";
   exit $retval;
 }
 
