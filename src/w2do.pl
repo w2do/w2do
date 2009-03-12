@@ -140,7 +140,7 @@ sub load_selection {
   my ($selected, $rest, $args) = @_;
 
   # Prepare the list of reserved characters:
-  my  $reserved  = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
+  my $reserved   = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
 
   # Escape reserved characters:
   $args->{group} =~ s/($reserved)/\\$1/g if $args->{group};
@@ -887,7 +887,7 @@ sub translate_date {
   elsif ($date eq 'year')      { return date_to_string(time + 31536000) }
   else  {
     # Report failure and exit:
-    exit_with_error("Invalid due date `$date'.", 22)
+    exit_with_error("Invalid due date `$date'.", 22);
   }
 }
 
@@ -895,13 +895,14 @@ sub translate_date {
 sub translate_mask {
   my $date = shift || die 'Missing argument';
 
+  # Translate the alias:
   if ($date eq 'month') {
     return substr(date_to_string(time), 0, 8) . '..';
   }
-  elsif ($date eq 'year')  {
+  elsif ($date eq 'year') {
     return substr(date_to_string(time), 0, 5) . '..-..';
   }
-  else  {
+  else {
     return translate_date($date);
   }
 }
@@ -985,7 +986,7 @@ if (my $value = $args{priority}) {
   }
 }
 
-# Check line width option:
+# Check the line width option:
 if ($Text::Wrap::columns < 75) {
   exit_with_error("Invalid line width `$Text::Wrap::columns'.", 22);
 }
@@ -1070,3 +1071,258 @@ elsif ($action == 97) {
 
 # Return success:
 exit 0;
+
+__END__
+
+=head1 NAME
+
+w2do - a simple text-based todo manager
+
+=head1 SYNOPSIS
+
+B<w2do> [B<-l>] [B<-t> I<task>] [B<-g> I<group>] [B<-d> I<date>] [B<-p>
+I<priority>] [B<-f>|B<-u>]
+
+B<w2do> B<-a> I<task> [B<-g> I<group>] [B<-d> I<date>] [B<-p> I<priority>]
+[B<-f>|B<-u>]
+
+B<w2do> B<-c> I<id> [B<-t> I<task>] [B<-g> I<group>] [B<-d> I<date>] [B<-p>
+I<priority>] [B<-f>|B<-u>]
+
+B<w2do> B<-r> I<id>
+
+B<w2do> [I<options>]
+
+=head1 DESCRIPTION
+
+B<w2do> is a simple to use yet efficient command-line todo manager written
+in Perl 5.
+
+=head1 OPTIONS
+
+=head2 General Options
+
+=over
+
+=item B<-l>, B<--list>
+
+Display items in the task list. All tasks are listed by default, but
+desired subset can be easily selected via specifying options as well. Since
+listing is the default action, this option can be safely omitted.
+
+=item B<-a> I<task>, B<--add> I<task>
+
+Add new item with selected I<task> name to the task list. When no
+additional specifying options are given, the group B<general>, the due date
+B<anytime> and the priority B<3> is used by default and the task is marked
+as unfinished.
+
+=item B<-c> I<id>, B<--change> I<id>
+
+Change item with selected I<id> in the task list. Further specifying
+options are required in order to take any effect.
+
+=item B<-r> I<id>, B<--remove> I<id>
+
+Remove item with selected I<id> from the task list.
+
+=item B<--change-group> I<group>
+
+Change all items in the selected I<group>. Further specifying options are
+required in order to take any effect.
+
+=item B<--remove-group> I<group>
+
+Remove all items from the selected I<group>.
+
+=item B<--purge-group> I<group>
+
+Remove all finished items from the selected I<group>.
+
+=item B<--change-date> I<date>
+
+Change all items with selected due I<date>. Further specifying options are
+required in order to take any effect.
+
+=item B<--remove-date> I<date>
+
+Remove all items with selected due I<date>.
+
+=item B<--purge-date> I<date>
+
+Remove all finished items with selected due I<date>.
+
+=item B<--change-old>
+
+Change all items with passed due date. Further specifying options are
+required in order to take any effect.
+
+=item B<--remove-old>
+
+Remove all items with passed due date.
+
+=item B<--purge-old>
+
+Remove all finished items with passed due date.
+
+=item B<--change-all>
+
+Change all items in the task list. Further specifying options are required
+in order to take any effect.
+
+=item B<--remove-all>
+
+Remove all items from the task list.
+
+=item B<--purge-all>
+
+Remove all finished items from the task list.
+
+=item B<-U>, B<--undo>
+
+Revert last action. When invoked, the data are restored from the backup
+file (i.e. C<~/.w2do.bak> by default), which is deleted at the same time.
+
+=item B<-G>, B<--groups>
+
+Display comma-delimited list of all groups in the task list.
+
+=item B<-S>, B<--stats>
+
+Display detailed task list statistics.
+
+=item B<-h>, B<--help>
+
+Display help message and exit.
+
+=item B<-v>, B<--version>
+
+Display version information and exit.
+
+=back
+
+=head2 Specifying Options
+
+=over
+
+=item B<-t> I<task>, B<--task> I<task>
+
+Specify the I<task> name.
+
+=item B<-g> I<group>, B<--group> I<group>
+
+Specify the I<group> name. The group name should be a single word with
+maximum of 10 characters, but longer names are shortened automatically.
+
+=item B<-d> I<date>, B<--date> I<date>
+
+Specify the due I<date>. Available options are B<anytime>, B<today>,
+B<yesterday>, B<tomorrow>, B<month>, B<year>, or an exact date in the
+YYYY-MM-DD format, e.g. 2008-06-17 for 17 June 2008.
+
+=item B<-p> I<priority>, B<--priority> I<priority>
+
+Specify the I<priority>. Available options are integers between B<1> and
+B<5>, where 1 represents the highest priority.
+
+=item B<-f>, B<--finished>
+
+Specify the finished task.
+
+=item B<-u>, B<--unfinished>
+
+Specify the unfinished task.
+
+=back
+
+=head2 Additional Options
+
+=over
+
+=item B<-s> I<file>, B<--savefile> I<file>
+
+Use selected I<file> instead of the default C<~/.w2do> as a save file.
+
+=item B<-w> I<width>, B<--width> I<width>
+
+Use selected line I<width>; the minimal value is B<75>.
+
+=item B<-q>, B<--quiet>
+
+Avoid displaying messages that are not necessary.
+
+=item B<-V>, B<--verbose>
+
+Display all messages; this is the default option.
+
+=item B<-C>, B<--colour>, B<--color>
+
+Use coloured output instead of the default plain text version.
+
+=item B<-P>, B<--plain>
+
+Use plain text output (no colours); this is the default option.
+
+=back
+
+=head1 ENVIRONMENT
+
+=over
+
+=item B<W2DO_SAVEFILE>
+
+Use selected file instead of the default C<~/.w2do> as a save file.
+
+=item B<W2DO_WIDTH>
+
+Use selected line width; the minimal value is B<75>.
+
+=back
+
+=head1 FILES
+
+=over
+
+=item I<~/.w2do>
+
+Default save file.
+
+=item I<~/.w2do.bak>
+
+Default backup file.
+
+=back
+
+=head1 SEE ALSO
+
+B<w2html>(1), B<w2text>(1), B<perl>(1).
+
+=head1 BUGS
+
+To report bugs or even send patches, you can either add new issue to the
+project bugtracker at <http://code.google.com/p/w2do/issues/>, visit the
+discussion group at <http://groups.google.com/group/w2do/>, or you can
+contact the author directly via e-mail.
+
+=head1 AUTHOR
+
+Written by Jaromir Hradilek <jhradilek@gmail.com>.
+
+Permission is granted to copy, distribute and/or modify this document under
+the terms of the GNU Free Documentation License, Version 1.2 or any later
+version published by the Free Software Foundation; with no Invariant
+Sections, no Front-Cover Texts, and no Back-Cover Texts.
+
+A copy of the license is included as a file called FDL in the main
+directory of the w2do source package.
+
+=head1 COPYRIGHT
+
+Copyright (C) 2008, 2009 Jaromir Hradilek
+
+This program is free software; see the source for copying conditions. It is
+distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.
+
+=cut
