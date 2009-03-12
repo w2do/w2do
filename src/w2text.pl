@@ -6,12 +6,12 @@
 # This program is  free software:  you can redistribute it and/or modify it
 # under  the terms  of the  GNU General Public License  as published by the
 # Free Software Foundation, version 3 of the License.
-# 
+#
 # This program  is  distributed  in the hope  that it will  be useful,  but
 # WITHOUT  ANY WARRANTY;  without  even the implied  warranty of MERCHANTA-
 # BILITY  or  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 # License for more details.
-# 
+#
 # You should have received a copy of the  GNU General Public License  along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
@@ -27,23 +27,89 @@ use Getopt::Long;
 use constant NAME    => basename($0, '.pl');       # Script name.
 use constant VERSION => '2.1.1';                   # Script version.
 
-# Global script settings:
-our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
-our $savefile  = $ENV{W2DO_SAVEFILE}    || catfile($HOMEDIR, '.w2do');
+# General script settings:
+our $HOMEDIR         = $ENV{HOME}          || $ENV{USERPROFILE} || '.';
+our $savefile        = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
 
 # Appearance settings:
-$Text::Wrap::columns = $ENV{W2DO_WIDTH} || 75;     # Default line width.
+$Text::Wrap::columns = $ENV{W2DO_WIDTH}    || 75;  # Default line width.
 
-# Command line options:
-my $outfile    = '-';                              # Output file name.
-my %args       = ();                               # Specifying options.
+# Other command-line options:
+my $outfile          = '-';                        # Output file name.
+my %args             = ();                         # Specifying options.
 
-# Signal handlers:
+# Set up the __WARN__ signal handler:
 $SIG{__WARN__} = sub {
-  exit_with_error((shift) . "Try `--help' for more information.", 22);
+  print STDERR NAME . ": " . (shift);
 };
 
-# Display script usage:
+# Display given message and terminate the script:
+sub exit_with_error {
+  my $message      = shift || 'An unspecified error has occurred.';
+  my $return_value = shift || 1;
+
+  # Print message to STDERR:
+  print STDERR NAME . ": $message\n";
+
+  # Return failure:
+  exit $return_value;
+}
+
+# Translate given date to YYYY-MM-DD string:
+sub date_to_string {
+  my $time = shift || time;
+  my @date = localtime($time);
+
+  # Return the result:
+  return sprintf("%d-%02d-%02d", ($date[5] + 1900), ++$date[4], $date[3]);
+}
+
+# Load selected data from the save file:
+sub load_selection {
+  my ($selected, $rest, $args) = @_;
+
+  # Prepare the list of reserved characters:
+  my $reserved   = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
+
+  # Escape reserved characters:
+  $args->{group} =~ s/($reserved)/\\$1/g if $args->{group};
+  $args->{task}  =~ s/($reserved)/\\$1/g if $args->{task};
+
+  # Use default pattern when none is provided:
+  my $group      = $args->{group}    || '[^:]*';
+  my $date       = $args->{date}     || '[^:]*';
+  my $priority   = $args->{priority} || '[1-5]';
+  my $state      = $args->{state}    || '[ft]';
+  my $task       = $args->{task}     || '';
+  my $id         = $args->{id}       || '\d+';
+
+  # Create the mask:
+  my $mask       = "^$group:$date:$priority:$state:.*$task.*:$id\$";
+
+  # Open the save file for reading:
+  if (open(SAVEFILE, "$savefile")) {
+    # Process each line:
+    while (my $line = <SAVEFILE>) {
+      # Check whether the line matches given pattern:
+      if ($line =~ /$mask/i) {
+        # Add line to the selected items list:
+        push(@$selected, $line);
+      }
+      else {
+        # Add line to the other items list:
+        push(@$rest, $line);
+      }
+    }
+
+    # Close the save file:
+    close(SAVEFILE);
+  }
+
+  # Return success:
+  return 1;
+}
+
+# Display usage information:
 sub display_help {
   my $NAME = NAME;
 
@@ -76,9 +142,12 @@ Additional options:
   -o, --output file        use selected file instead of the standard output
   -w, --width width        use selected line width; the minimal value is 75
 END_HELP
+
+  # Return success:
+  return 1;
 }
 
-# Display script version:
+# Display version information:
 sub display_version {
   my ($NAME, $VERSION) = (NAME, VERSION);
 
@@ -92,6 +161,9 @@ distributed in the hope  that it will be useful,  but WITHOUT ANY WARRANTY;
 without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PAR-
 TICULAR PURPOSE.
 END_VERSION
+
+  # Return success:
+  return 1;
 }
 
 # Write items in the task list to the selected output:
@@ -100,14 +172,14 @@ sub write_tasks {
   my @data;
 
   # Load matching tasks:
-  load_selection(\@data, undef, $args);
+  load_selection(\@data, undef, $args) or return 0;
 
   # Open the selected output for writing:
   if (open(SAVEFILE, ">$outfile")) {
     # Check whether the list is not empty:
     if (@data) {
       my ($group, $task) = '';
-      
+
       # Process each task:
       foreach my $line (sort @data) {
         # Parse the task record:
@@ -132,74 +204,57 @@ sub write_tasks {
     }
   }
   else {
-    # Report failure and exit:
-    exit_with_error("Unable to write to `$outfile'.", 13);
+    # Report failure:
+    print STDERR "Unable to write to `$outfile'.\n";
+
+    # Return failure:
+    return 0;
   }
+
+  # Return success:
+  return 1;
 }
 
-# Load selected data from the save file:
-sub load_selection {
-  my ($selected, $rest, $args) = @_;
-  my  $reserved  = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
+# Fix the group name:
+sub fix_group {
+  my $group = shift || die 'Missing argument';
 
-  # Escape reserved characters:
-  $args->{group} =~ s/($reserved)/\\$1/g if $args->{group};
-  $args->{task}  =~ s/($reserved)/\\$1/g if $args->{task};
+  # Check whether it contains forbidden characters:
+  if ($group =~ /:/) {
+    # Display warning:
+    print STDERR "Colon is not allowed in the group name. Removing.\n";
 
-  # Use default pattern when none is provided:
-  my $group    = $args->{group}    || '[^:]*';
-  my $date     = $args->{date}     || '[^:]*';
-  my $priority = $args->{priority} || '[1-5]';
-  my $state    = $args->{state}    || '[ft]';
-  my $task     = $args->{task}     || '';
-  my $id       = $args->{id}       || '\d+';
-
-  # Create the mask:
-  my $mask     = "^$group:$date:$priority:$state:.*$task.*:$id\$";
-
-  # Open the save file for reading:
-  if (open(SAVEFILE, "$savefile")) {
-    # Process each line:
-    while (my $line = <SAVEFILE>) {
-      # Check whether the line matches given pattern:
-      if ($line =~ /$mask/i) {
-        # Add line to the selected items list:
-        push(@$selected, $line);
-      }
-      else {
-        # Add line to the other items list:
-        push(@$rest, $line);
-      }
-    }
-
-    # Close the save file:
-    close(SAVEFILE);
+    # Remove forbidden characters:
+    $group =~ s/://g;
   }
-  else {
-    # Report failure and exit:
-    exit_with_error("Unable to read from `$savefile'.", 13);
-  }
-}
 
-# Translate due date alias to mask:
-sub translate_mask {
-  my $date = shift;
+  # Check the group name length:
+  if (length($group) > 10) {
+    # Display warning:
+    print STDERR "Group name too long. Stripping.\n";
 
-  if ($date eq 'month') { 
-    return substr(date_to_string(time), 0, 8) . '..';
+    # Strip it to the maximal allowed length:
+    $group = substr($group, 0, 10);
   }
-  elsif ($date eq 'year')  { 
-    return substr(date_to_string(time), 0, 5) . '..-..';
+
+  # Make sure the result is not empty:
+  unless ($group) {
+    # Display warning:
+    print STDERR "Group name is empty. Using the default group instead.\n";
+
+    # Use default group instead:
+    $group = 'general';
   }
-  else  { 
-    return translate_date($date);
-  }
+
+  # Return the result:
+  return $group;
 }
 
 # Translate due date alias to YYYY-MM-DD string:
 sub translate_date {
-  my $date = shift;
+  my $date = shift || die 'Missing argument';
 
+  # Translate the alias:
   if    ($date =~ /^\d{4}-[01]\d-[0-3]\d$/) { return $date }
   elsif ($date eq 'anytime')   { return $date }
   elsif ($date eq 'today')     { return date_to_string(time) }
@@ -207,22 +262,26 @@ sub translate_date {
   elsif ($date eq 'tomorrow')  { return date_to_string(time + 86400) }
   elsif ($date eq 'month')     { return date_to_string(time + 2678400)  }
   elsif ($date eq 'year')      { return date_to_string(time + 31536000) }
-  else  { exit_with_error("Invalid due date `$date'.", 22) }
+  else  {
+    # Report failure and exit:
+    exit_with_error("Invalid due date `$date'.", 22);
+  }
 }
 
-# Translate given date to YYYY-MM-DD string:
-sub date_to_string {
-  my @date = localtime(shift);
-  return sprintf("%d-%02d-%02d", ($date[5] + 1900), ++$date[4], $date[3]);
-}
+# Translate due date alias to mask:
+sub translate_mask {
+  my $date = shift;
 
-# Display given message and immediately terminate the script:
-sub exit_with_error {
-  my $message = shift || 'An unspecified error has occurred.';
-  my $retval  = shift || 1;
-
-  print STDERR NAME . ": $message\n";
-  exit $retval;
+  # Translate the alias:
+  if ($date eq 'month') {
+    return substr(date_to_string(time), 0, 8) . '..';
+  }
+  elsif ($date eq 'year') {
+    return substr(date_to_string(time), 0, 5) . '..-..';
+  }
+  else {
+    return translate_date($date);
+  }
 }
 
 # Set up the option parser:
@@ -253,30 +312,30 @@ if (scalar(@ARGV) != 0) {
   exit_with_error("Invalid option `$ARGV[0]'.", 22);
 }
 
-# Trim group option:
+# Fix the group option:
 if (my $value = $args{group}) {
-  $args{group} = substr($value, 0, 10);
+  $args{group} = fix_group($value);
 }
 
-# Translate due date option:
+# Translate the due date option:
 if (my $value = $args{date}) {
   $args{date} = translate_mask($value)
 }
 
-# Check priority option:
+# Check the priority option:
 if (my $value = $args{priority}) {
   unless ($value =~ /^[1-5]$/) {
     exit_with_error("Invalid priority `$value'.", 22);
   }
 }
 
-# Check line width option:
+# Check the line width option:
 if ($Text::Wrap::columns < 75) {
   exit_with_error("Invalid line width `$Text::Wrap::columns'.", 22);
 }
 
 # Perform appropriate action:
-write_tasks($outfile, \%args);
+write_tasks($outfile, \%args) or exit 1;
 
 # Return success:
 exit 0;
