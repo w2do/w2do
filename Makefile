@@ -1,5 +1,5 @@
 # makefile for w2do, a simple text-based todo manager
-# Copyright (C) 2008 Jaromir Hradilek
+# Copyright (C) 2008, 2009 Jaromir Hradilek
 
 # This program is  free software:  you can redistribute it and/or modify it
 # under  the terms  of the  GNU General Public License  as published by the
@@ -13,13 +13,12 @@
 # You should have received a copy of the  GNU General Public License  along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
-# General settings; feel free to modify according to your actual situation:
+# General settings; feel free to modify according to your situation:
 SHELL   = /bin/sh
 INSTALL = /usr/bin/install -c
 
 # Installation directories; feel free to modify according to your taste and
-# actual situation:
+# situation:
 prefix  = /usr/local
 bindir  = $(prefix)/bin
 mandir  = $(prefix)/share/man
@@ -35,14 +34,14 @@ all:
 install:
 	@echo "Copying binaries..."
 	$(INSTALL) -d $(bindir)
-	$(INSTALL) -m 755 ./w2do.pl $(bindir)/w2do
-	$(INSTALL) -m 755 ./w2html.pl $(bindir)/w2html
-	$(INSTALL) -m 755 ./w2text.pl $(bindir)/w2text
+	$(INSTALL) -m 755 src//w2do.pl $(bindir)/w2do
+	$(INSTALL) -m 755 src//w2html.pl $(bindir)/w2html
+	$(INSTALL) -m 755 src//w2text.pl $(bindir)/w2text
 	@echo "Copying man pages..."
 	$(INSTALL) -d $(man1dir)
-	$(INSTALL) -m 644 ./man/man1/w2do.1 $(man1dir)
-	$(INSTALL) -m 644 ./man/man1/w2html.1 $(man1dir)
-	$(INSTALL) -m 644 ./man/man1/w2text.1 $(man1dir)
+	$(INSTALL) -m 644 man/man1/w2do.1 $(man1dir)
+	$(INSTALL) -m 644 man/man1/w2html.1 $(man1dir)
+	$(INSTALL) -m 644 man/man1/w2text.1 $(man1dir)
 
 uninstall:
 	@echo "Removing binaries..."
