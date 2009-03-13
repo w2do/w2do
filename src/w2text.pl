@@ -33,6 +33,7 @@ our $savefile        = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
 
 # Appearance settings:
 $Text::Wrap::columns = $ENV{W2DO_WIDTH}    || 75;  # Default line width.
+our $shallow         = 0;                          # Turn off group names?
 
 # Other command-line options:
 my $outfile          = '-';                        # Output file name.
@@ -115,8 +116,8 @@ sub display_help {
 
   # Print the message:
   print << "END_HELP";
-Usage: $NAME [-o file] [-s file] [-w width] [-f|-u] [-d date] [-g group]
-              [-p priority] [-t task]
+Usage: $NAME [-S] [-o file] [-s file] [-w width] [-f|-u] [-d date]
+              [-g group] [-p priority] [-t task]
        $NAME -h | -v
 
 General options:
@@ -141,6 +142,7 @@ Additional options:
   -s, --savefile file      use selected file instead of the default ~/.w2do
   -o, --output file        use selected file instead of the standard output
   -w, --width width        use selected line width; the minimal value is 75
+  -S, --shallow            organise tasks as a single list (no group names)
 END_HELP
 
   # Return success:
@@ -186,7 +188,7 @@ sub write_tasks {
         $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
 
         # Write heading when group changes:
-        if (lc($1) ne $group) {
+        if (lc($1) ne $group && !$shallow) {
           print FILE "\n" if $group;
           print FILE "$1:\n\n";
           $group = lc($1);
@@ -305,6 +307,7 @@ GetOptions(
   'savefile|s=s'   => sub { $savefile            = $_[1] },
   'output|o=s'     => sub { $outfile             = $_[1] },
   'width|w=i'      => sub { $Text::Wrap::columns = $_[1] },
+  'shallow|S'      => sub { $shallow             = 1 },
 );
 
 # Detect superfluous options:
@@ -348,8 +351,9 @@ w2text - a plain text exporter for w2do
 
 =head1 SYNOPSIS
 
-B<w2text> [B<-o> I<file>] [B<-s> I<file>] [B<-w> I<width>] [B<-f>|B<-u>]
-[B<-d> I<date>] [B<-g> I<group>] [B<-p> I<priority>] [B<-t> I<task>]
+B<w2text> [B<-S>] [B<-o> I<file>] [B<-s> I<file>] [B<-w> I<width>]
+[B<-f>|B<-u>] [B<-d> I<date>] [B<-g> I<group>] [B<-p> I<priority>] [B<-t>
+I<task>]
 
 B<w2text> B<-h> | B<-v>
 
@@ -424,6 +428,11 @@ Use selected I<file> instead of the default C<~/.w2do> as a save file.
 =item B<-w> I<width>, B<--width> I<width>
 
 Use selected line I<width>; the minimal value is B<75>.
+
+=item B<-S>, B<--shallow>
+
+Organise tasks as a single list instead of listing them by groups they
+belong to.
 
 =back
 
