@@ -3,7 +3,7 @@
                          installation instructions
 
 
-   Copyright (C) 2008 Jaromir Hradilek
+   Copyright (C) 2008, 2009 Jaromir Hradilek
 
    Permission is granted to copy, distribute and/or modify this document
    under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -28,7 +28,7 @@ from <http://www.activestate.com/Products/activeperl/>.
 
 The easiest way to install w2do on Unix operating system (e.g. Linux, vari-
 ous *BSD systems etc.) is to use the existing Makefile. As a root, get into
-the main directory of the w2do source package and type:
+the src/ directory in the w2do source package and type:
 
   make install
 

@@ -16,6 +16,9 @@
 # General settings; feel free to modify according to your situation:
 SHELL   = /bin/sh
 INSTALL = /usr/bin/install -c
+POD2MAN = /usr/bin/pod2man
+SRCS   := $(wildcard src/*.pl)
+MAN1   := $(patsubst %.pl, %.1, $(SRCS))
 
 # Installation directories; feel free to modify according to your taste and
 # situation:
@@ -26,25 +29,27 @@ man1dir = $(mandir)/man1
 
 # Make rules;  please do not edit these unless you really know what you are
 # doing:
-.PHONY: all install uninstall
+.PHONY: all clean install uninstall
 
-all:
-	@echo "Type \`make install' to perform installation."
+all: $(MAN1)
 
-install:
-	@echo "Copying binaries..."
+clean:
+	-rm -f $(MAN1)
+
+install: $(MAN1)
+	@echo "Copying scripts..."
 	$(INSTALL) -d $(bindir)
-	$(INSTALL) -m 755 src//w2do.pl $(bindir)/w2do
-	$(INSTALL) -m 755 src//w2html.pl $(bindir)/w2html
-	$(INSTALL) -m 755 src//w2text.pl $(bindir)/w2text
+	$(INSTALL) -m 755 src/w2do.pl $(bindir)/w2do
+	$(INSTALL) -m 755 src/w2html.pl $(bindir)/w2html
+	$(INSTALL) -m 755 src/w2text.pl $(bindir)/w2text
 	@echo "Copying man pages..."
 	$(INSTALL) -d $(man1dir)
-	$(INSTALL) -m 644 man/man1/w2do.1 $(man1dir)
-	$(INSTALL) -m 644 man/man1/w2html.1 $(man1dir)
-	$(INSTALL) -m 644 man/man1/w2text.1 $(man1dir)
+	$(INSTALL) -m 644 src/w2do.1 $(man1dir)
+	$(INSTALL) -m 644 src/w2html.1 $(man1dir)
+	$(INSTALL) -m 644 src/w2text.1 $(man1dir)
 
 uninstall:
-	@echo "Removing binaries..."
+	@echo "Removing scripts..."
 	rm -f $(bindir)/w2do
 	rm -f $(bindir)/w2html
 	rm -f $(bindir)/w2text
@@ -54,4 +59,7 @@ uninstall:
 	rm -f $(man1dir)/w2text.1
 	@echo "Removing empty directories..."
 	-rmdir $(bindir) $(man1dir) $(mandir)
+
+%.1: %.pl
+	$(POD2MAN) $^ $@
 
