@@ -6,19 +6,18 @@
 # This program is  free software:  you can redistribute it and/or modify it
 # under  the terms  of the  GNU General Public License  as published by the
 # Free Software Foundation, version 3 of the License.
-# 
+#
 # This program  is  distributed  in the hope  that it will  be useful,  but
 # WITHOUT  ANY WARRANTY;  without  even the implied  warranty of MERCHANTA-
 # BILITY  or  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 # License for more details.
-# 
+#
 # You should have received a copy of the  GNU General Public License  along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 use strict;
 use warnings;
 use locale;
-use Text::Wrap;
 use File::Basename;
 use File::Spec::Functions;
 use Getopt::Long;
@@ -27,531 +26,208 @@ use Getopt::Long;
 use constant NAME    => basename($0, '.pl');       # Script name.
 use constant VERSION => '2.1.1';                   # Script version.
 
-# Global script settings:
-our $HOMEDIR   = $ENV{HOME} || $ENV{USERPROFILE} || '.';
-our $savefile  = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
-our $heading   = $ENV{USERNAME} ? "$ENV{USERNAME}'s task list"
-                                : "current task list";
-our $homepage  = 'http://code.google.com/p/w2do/'; # Project homepage.
-our $timestamp = localtime(time);                  # Time of creation.
+# General script settings:
+our $HOMEDIR         = $ENV{HOME}          || $ENV{USERPROFILE} || '.';
+our $savefile        = $ENV{W2DO_SAVEFILE} || catfile($HOMEDIR, '.w2do');
+our $heading         = $ENV{USERNAME}      ? "$ENV{USERNAME}'s task list"
+                                           : "current task list";
+our $encoding        = 'UTF-8';                    # Save file encoding.
+our $outfile         = '-';                        # Output file name.
+our $inline          = 0;                          # Embed the style sheet?
+our $bare            = 0;                          # Leave out the HTML
+                                                   # header and footer?
+# Other command-line options:
+my  %args            = ();                         # Specifying options.
 
-# Command line options:
-my $outfile    = '-';                              # Output file name.
-my $design     = 'blue';                           # Output design.
-my %args       = ();                               # Specifying options.
+# The document structure related part of the default style sheet:
+our $css_structure   = << "END_CSS_STRUCTURE";
+body {
+  margin: 0px 0px 10px 0px;
+  padding: 0px;
+  color: #000000;
+  background-color: #e7e7e7;
+  font-family: "DejaVu Sans", Arial, sans;
+  font-size: small;
+}
 
-# Signal handlers:
+#wrapper {
+  margin: auto;
+  padding: 0px;
+  width: 768px;
+  border-left: 1px solid #d6d6d6;
+  border-right: 1px solid #d6d6d6;
+  border-bottom: 1px solid #d6d6d6;
+  background-color: #ffffff;
+}
+
+#heading {
+  width: 728px;
+  margin: auto;
+  padding: 20px;
+  background-color: #2e2e2e;
+  border-bottom: 2px solid #2a2a2a;
+  border-top: 2px solid #323232;
+  color: #d0d0d0;
+}
+
+#heading a, #heading h1 {
+  margin: 0px;
+  text-decoration: none;
+  color: #ffffff;
+}
+
+#heading a:hover {
+  text-decoration: underline;
+}
+
+#content {
+  margin: 0px;
+  padding: 10px 20px 20px 20px;
+  width: 728px;
+  text-align: justify;
+  border-top: 2px solid #e7e7e7;
+  border-bottom: 2px solid #e7e7e7;
+}
+
+#footer {
+  clear: both;
+  margin: 0px;
+  padding: 10px 20px 10px 20px;
+  border-top: 1px solid #5f5f5f;
+  border-bottom: 1px solid #3d3d3d;
+  background-color: #4e4e4e;
+  text-align: right;
+  font-size: x-small;
+  color: #d0d0d0;
+}
+
+#footer a {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+#footer a:hover {
+  text-decoration: underline;
+}
+
+END_CSS_STRUCTURE
+
+# The tasks related part of the default style sheet:
+our $css_tasks       = << "END_CSS_TASKS";
+h2.todo_group {
+  margin-bottom: 0.3em;
+}
+
+h2.todo_group a {
+  text-decoration: none;
+  color: #9acd32;
+}
+
+h2.todo_group a:hover {
+  text-decoration: underline;
+}
+
+h2 .todo_stats {
+  font-size: x-small;
+  font-weight: normal;
+  color: #4e9a06;
+}
+
+table.todo_tasks {
+  width: 100%;
+  margin: auto;
+}
+
+table.todo_tasks th {
+  background-color: #4e4e4e;
+  color: #ffffff;
+}
+
+table.todo_tasks tr {
+  background-color: #f5f5f5;
+}
+
+table.todo_tasks tr:hover {
+  background-color: #dcdcdc;
+}
+
+table.todo_tasks .todo_date {
+  width: 100px;
+  text-align: center;
+}
+
+table.todo_tasks .todo_priority {
+  width: 100px;
+  text-align: center;
+}
+
+table.todo_tasks .todo_state {
+  width: 50px;
+  text-align: center;
+}
+
+table.todo_tasks .todo_description {
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: left;
+}
+
+table.todo_tasks .todo_finished {
+  background-color: #98fb98;
+}
+
+table.todo_tasks .todo_finished:hover {
+  background-color: #00ff7f;
+}
+END_CSS_TASKS
+
+# Set up the __WARN__ signal handler:
 $SIG{__WARN__} = sub {
-  exit_with_error((shift) . "Try `--help' for more information.", 22);
+  print STDERR NAME . ": " . (shift);
 };
 
-# Display script usage:
-sub display_help {
-  my $NAME = NAME;
+# Display given message and terminate the script:
+sub exit_with_error {
+  my $message      = shift || 'An unspecified error has occurred.';
+  my $return_value = shift || 1;
 
-  # Print the message:
-  print << "END_HELP";
-Usage: $NAME [-B|-D] [-H heading] [-o file] [-s file] [-f|-u] [-d date]
-              [-g group] [-p priority] [-t task]
-       $NAME -h | -v
+  # Print message to STDERR:
+  print STDERR NAME . ": $message\n";
 
-General options:
-
-  -h, --help               display this help and exit
-  -v, --version            display version information and exit
-
-Specifying options:
-
-  -t, --task task          specify the task name
-  -g, --group group        specify the group name
-  -d, --date date          specify the due date; available options are
-                           anytime, today, yesterday, tomorrow, month,
-                           year, or an exact date in the YYYY-MM-DD format
-  -p, --priority priority  specify the priority; available options are 1-5
-                           where 1 represents the highest priority
-  -f, --finished           specify the finished task
-  -u, --unfinished         specify the unfinished task
-
-Additional options:
-
-  -s, --savefile file      use selected file instead of the default ~/.w2do
-  -o, --output file        use selected file instead of the standard output
-  -H, --heading text       use selected heading
-  -B, --blue               produce page with blue design
-  -D, --dark               produce page with dark design
-END_HELP
+  # Return failure:
+  exit $return_value;
 }
 
-# Display script version:
-sub display_version {
-  my ($NAME, $VERSION) = (NAME, VERSION);
-
-  # Print the message:
-  print << "END_VERSION";
-$NAME $VERSION
-
-Copyright (C) 2008, 2009 Jaromir Hradilek
-This program is free software; see the source for copying conditions. It is
-distributed in the hope  that it will be useful,  but WITHOUT ANY WARRANTY;
-without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PAR-
-TICULAR PURPOSE.
-END_VERSION
-}
-
-# Write items in the task list to the selected output:
-sub write_tasks {
-  my ($outfile, $args) = @_;
-  my $stats = {};
-  my @data;
-
-  # Load matching tasks:
-  load_selection(\@data, undef, $args);
-
-  # Get task list statistics:
-  get_stats($stats);
-
-  # Open the selected output for writing:
-  if (open(SAVEFILE, ">$outfile")) {
-    # Check whether the list is not empty:
-    if (@data) {
-      my $group = '';
-
-      # Write header:
-      print SAVEFILE header();
-
-      # Process each task:
-      foreach my $line (sort @data) {
-        # Parse the task record:
-        $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
-
-        # Write heading when group changes:
-        if (lc($1) ne $group) {
-          # Write group closing if opened:
-          print SAVEFILE close_group() if $group;
-
-          # Translate the group name to lower case:
-          $group = lc($1);
-
-          # Write group beginning:
-          print SAVEFILE begin_group($1, $stats->{$group}->{tasks},
-                                         $stats->{$group}->{done});
-        }
-
-        # Write task entry:
-        print SAVEFILE group_item($2, $3, $4, $5);
-      }
-
-      # Write group closing:
-      print SAVEFILE close_group();
-
-      # Write footer:
-      print SAVEFILE footer();
-
-      # Close the outpt:
-      close(SAVEFILE);
-    }
-  }
-  else {
-    # Report failure and exit:
-    exit_with_error("Unable to write to `$outfile'.", 13);
-  }
-}
-
-# Return the document header:
-sub header {
-  my ($NAME, $VERSION) = (NAME, VERSION);
-
-  # Decide which design to use:
-  if ($design eq 'blue') {
-    return << "END_BLUE";
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-                      "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="Generator" content="$NAME $VERSION">
-  <meta name="Date" content="$timestamp">
-  <title>$heading</title>
-  <style type="text/css">
-  <!--
-    body {
-      background-color: #4682b4;
-      color: #000000;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0px;
-    }
-
-    h2 {
-      color: #225588;
-      margin-bottom: 4px;
-      text-align: left;
-    }
-
-    table {
-      margin: auto;
-    }
-
-    th {
-      background-color: #4682b4;
-      color: #ffffff;
-    }
-
-    tr {
-      background-color: #f5f5f5;
-    }
-
-    tr:hover {
-      background-color: #dcdcdc;
-    }
-
-    a {
-      color: #add8e6;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    #header {
-      text-align: center;
-      width: 100%;
-    }
-
-    #middle {
-      background-color: #ffffff;
-      border-bottom: 4px solid #add8e6;
-      border-top: 4px solid #add8e6;
-      margin: 0px;
-    }
-
-    #content {
-      margin: auto;
-      padding: 0px 5px 20px 5px;
-      width: 640px;
-    }
-
-    #footer {
-      color: #ffffff;
-      font-size: x-small;
-      text-align: right;
-      margin-bottom: 20px;
-      width: 100%;
-    }
-
-    .hack {
-      padding: 15px 5px 15px 5px;
-      background-color: #4682b4;
-    }
-
-    .heading {
-      color: #ffffff;
-      font-size: xx-large;
-      font-weight: bold;
-    }
-
-    .subheading {
-      color: #ffffff;
-      font-size: small;
-      text-align: right;
-    }
-
-    .stats {
-      color: #225588;
-      font-size: x-small;
-    }
-
-    .tasks {
-      width: 100%;
-    }
-
-    .date {
-      width: 100px;
-    }
-
-    .priority {
-      width: 100px;
-    }
-
-    .state {
-      width: 50px;
-    }
-
-    .description {
-      text-align: left;
-    }
-
-    .finished {
-      background-color: #add8e6;
-    }
-
-    .finished:hover {
-      background-color: #4682b4;
-    }
-  -->
-  </style>
-</head>
-
-<body>
-
-<div id="header">
-  <table>
-    <tr>
-      <td class="hack">
-        <div class="heading">$heading</div>
-        <div class="subheading">$timestamp</div>
-      </td>
-    </tr>
-  </table>
-</div>
-
-<div id="middle"><div id="content">
-END_BLUE
-  }
-  else {
-    return << "END_DARK";
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-                      "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="Generator" content="$NAME $VERSION">
-  <meta name="Date" content="$timestamp">
-  <title>$heading</title>
-  <style type="text/css">
-  <!--
-    body {
-      background-color: #000000;
-      color: #ffffff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
-
-    h2 {
-      color: #1e90ff;
-      margin-bottom: 4px;
-      text-align: left;
-    }
-
-    table {
-      margin: auto;
-    }
-
-    th {
-      background-color: #1d1d1d;
-    }
-
-    tr {
-      background-color: #080808;
-    }
-
-    tr:hover {
-      background-color: #1d1d1d;
-    }
-
-    a {
-      color: #1e90ff;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    #header {
-      background-color: #000000;
-      border-bottom: 4px solid #1d1d1d;
-      margin: auto;
-      padding: 15px 5px 15px 5px;
-      text-align: center;
-      width: 640px;
-    }
-
-    #content {
-      background-color: #0f0f0f;
-      border-bottom: 4px solid #1d1d1d;
-      border-top: 1px solid #080808;
-      margin: auto;
-      padding: 0px 5px 20px 5px;
-      width: 640px;
-    }
-
-    #footer {
-      background-color: #000000;
-      border-top: 1px solid #080808;
-      color: #404040;
-      font-size: x-small;
-      margin: auto;
-      padding: 0px 0px 0px 10px;
-      text-align: right;
-      width: 640px;
-    }
-
-    .hack {
-      background-color: #000000;
-    }
-
-    .heading {
-      color: #1e90ff;
-      font-size: xx-large;
-      font-weight: bold;
-    }
-
-    .subheading {
-      color: #4682b4;
-      font-size: small;
-      text-align: right;
-    }
-
-    .stats {
-      color: #4682b4;
-      font-size: x-small;
-    }
-
-    .tasks {
-      width: 100%;
-    }
-
-    .date {
-      width: 100px;
-    }
-
-    .priority {
-      width: 100px;
-    }
-
-    .state {
-      width: 50px;
-    }
-
-    .description {
-      text-align: left;
-    }
-
-    .finished {
-      background-color: #303030;
-    }
-
-    .finished:hover {
-      background-color: #404040;
-    }
-  -->
-  </style>
-</head>
-
-<body>
-
-<div id="header">
-  <table>
-    <tr>
-      <td class="hack">
-        <div class="heading">$heading</div>
-        <div class="subheading">$timestamp</div>
-      </td>
-    </tr>
-  </table>
-</div>
-
-<div id="content">
-END_DARK
-  }
-}
-
-# Return the document footer:
-sub footer {
-  my ($NAME, $VERSION) = (NAME, VERSION);
-
-  # Decide which design to use:
-  if ($design eq 'blue') {
-    return << "END_BLUE"
-</div></div>
-
-<div id="footer">
-  generated using <a href="$homepage">$NAME $VERSION</a>
-</div>
-
-</body>
-</html>
-END_BLUE
-  }
-  else {
-    return << "END_DARK";
-</div>
-
-<div id="footer">
-  generated using <a href="$homepage">$NAME $VERSION</a>
-</div>
-
-</body>
-</html>
-END_DARK
-  }
-}
-
-# Return the beginning of new group:
-sub begin_group {
-  my ($group, $tasks, $done) = @_;
-  my $stats = sprintf "%d task%s, %d unfinished",
-                      $tasks, (($tasks != 1) ? 's' : ''),
-                      $tasks - $done;
-
-  return << "END_BEGIN_GROUP";
-<h2><a name="$group"></a>$group <span class="stats">$stats</span></h2>
-
-<table class="tasks">
-  <tr>
-    <th class="date">due date</th>
-    <th class="priority">priority</th>
-    <th class="state">state</th>
-    <th class="description">task</th>
-  </tr>
-END_BEGIN_GROUP
-}
-
-# Return the group closing:
-sub close_group {
-  return "</table>\n\n";
-}
-
-# Return the group item:
-sub group_item {
-  my ($date, $priority, $state, $task) = @_;
-  my @priorities = ('very high', 'high', 'medium', 'low', 'very low');
-
-  my $class = ($state eq 't') ? ' class="finished"' : '';
-  $state    = ($state eq 't') ? 'ok' : '&nbsp;';
-  $priority = $priorities[--$priority];
-
-  return << "END_GROUP_ITEM";
-  <tr$class>
-    <td class="date">$date</td>
-    <td class="priority">$priority</td>
-    <td class="state">$state</td>
-    <td class="description">$task</td>
-  </tr>
-END_GROUP_ITEM
+# Translate given date to YYYY-MM-DD string:
+sub date_to_string {
+  my $time = shift || time;
+  my @date = localtime($time);
+
+  # Return the result:
+  return sprintf("%d-%02d-%02d", ($date[5] + 1900), ++$date[4], $date[3]);
 }
 
 # Load selected data from the save file:
 sub load_selection {
   my ($selected, $rest, $args) = @_;
-  my  $reserved  = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
+
+  # Prepare the list of reserved characters:
+  my $reserved   = '[\\\\\^\.\$\|\(\)\[\]\*\+\?\{\}]';
 
   # Escape reserved characters:
   $args->{group} =~ s/($reserved)/\\$1/g if $args->{group};
   $args->{task}  =~ s/($reserved)/\\$1/g if $args->{task};
 
   # Use default pattern when none is provided:
-  my $group    = $args->{group}    || '[^:]*';
-  my $date     = $args->{date}     || '[^:]*';
-  my $priority = $args->{priority} || '[1-5]';
-  my $state    = $args->{state}    || '[ft]';
-  my $task     = $args->{task}     || '';
-  my $id       = $args->{id}       || '\d+';
+  my $group      = $args->{group}    || '[^:]*';
+  my $date       = $args->{date}     || '[^:]*';
+  my $priority   = $args->{priority} || '[1-5]';
+  my $state      = $args->{state}    || '[ft]';
+  my $task       = $args->{task}     || '';
+  my $id         = $args->{id}       || '\d+';
 
   # Create the mask:
-  my $mask     = "^$group:$date:$priority:$state:.*$task.*:$id\$";
+  my $mask       = "^$group:$date:$priority:$state:.*$task.*:$id\$";
 
   # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
@@ -571,18 +247,15 @@ sub load_selection {
     # Close the save file:
     close(SAVEFILE);
   }
-  else {
-    # Report failure and exit:
-    exit_with_error("Unable to read from `$savefile'.", 13);
-  }
+
+  # Return success:
+  return 1;
 }
 
 # Get task list statistics:
 sub get_stats {
-  my $stats  = shift;
-  my $groups = 0;
-  my $tasks  = 0;
-  my $undone = 0;
+  my $stats  = shift || die 'Missing argument';
+  my ($groups, $tasks, $undone) = (0, 0, 0);
 
   # Open the save file for reading:
   if (open(SAVEFILE, "$savefile")) {
@@ -618,25 +291,330 @@ sub get_stats {
   return $groups, $tasks, $undone;
 }
 
-# Translate due date alias to mask:
-sub translate_mask {
-  my $date = shift;
+# Display usage information:
+sub display_help {
+  my $NAME = NAME;
 
-  if ($date eq 'month') { 
-    return substr(date_to_string(time), 0, 8) . '..';
+  # Print the message:
+  print << "END_HELP";
+Usage: $NAME [-bi] [-H heading] [-e encoding] [-o file] [-s file]
+              [-f|-u] [-d date] [-g group] [-p priority] [-t task]
+       $NAME -h | -v
+
+General options:
+
+  -h, --help               display this help and exit
+  -v, --version            display version information and exit
+
+Specifying options:
+
+  -t, --task task          specify the task name
+  -g, --group group        specify the group name
+  -d, --date date          specify the due date; available options are
+                           anytime, today, yesterday, tomorrow, month,
+                           year, or an exact date in the YYYY-MM-DD format
+  -p, --priority priority  specify the priority; available options are 1-5
+                           where 1 represents the highest priority
+  -f, --finished           specify the finished task
+  -u, --unfinished         specify the unfinished task
+
+Additional options:
+
+  -H, --heading text       use selected document heading
+  -s, --savefile file      use selected file instead of the default ~/.w2do
+  -o, --output file        use selected file instead of the standard output
+  -e, --encoding encoding  use selected file encoding
+  -b, --bare               leave out the HTML header and footer
+  -i, --inline             embed the style sheet
+END_HELP
+
+  # Return success:
+  return 1;
+}
+
+# Display version information:
+sub display_version {
+  my ($NAME, $VERSION) = (NAME, VERSION);
+
+  # Print the message:
+  print << "END_VERSION";
+$NAME $VERSION
+
+Copyright (C) 2008, 2009 Jaromir Hradilek
+This program is free software; see the source for copying conditions. It is
+distributed in the hope  that it will be useful,  but WITHOUT ANY WARRANTY;
+without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PAR-
+TICULAR PURPOSE.
+END_VERSION
+
+  # Return success:
+  return 1;
+}
+
+# Create a style sheet file and return the LINK element:
+sub write_style_sheet {
+  # Do not create the style sheet when writing to STDOUT:
+  return 0 if $outfile eq '-';
+
+  # Derive the style sheet file name:
+  (my $file = $outfile) =~ s/(\.html?|\.php|)$/.css/;
+
+  # Open the file for writing:
+  if (open(STYLE, ">$file")) {
+    # Write the document structure related part:
+    print STYLE $css_structure unless $bare;
+
+    # Write the tasks related part:
+    print STYLE $css_tasks;
+
+    # Close the file:
+    close(STYLE);
   }
-  elsif ($date eq 'year')  { 
-    return substr(date_to_string(time), 0, 5) . '..-..';
+  else {
+    # Report failure:
+    print STDERR "Unable to write to `$file'.\n";
+
+    # Return failure:
+    return 0;
   }
-  else  { 
-    return translate_date($date);
+
+  # Return the LINK element:
+  return "<link rel=\"stylesheet\" href=\"$file\" type=\"text/css\">\n";
+}
+
+# Return the style sheet or a LINK element pointing to it:
+sub style_sheet {
+  # Check whether to have style sheet as a separate file:
+  unless ($inline) {
+    # Return the LINK element:
+    return write_style_sheet();
   }
+  else {
+    # Return the style sheet:
+    return << "END_STYLE_SHEET";
+<style type="text/css"><!--
+$css_structure$css_tasks  --></style>
+END_STYLE_SHEET
+  }
+}
+
+# Return the HTML header:
+sub html_header {
+  my ($NAME, $VERSION) = (NAME, VERSION);
+  my $style_sheet      = style_sheet() || "\n";
+  my $timestamp        = localtime(time);
+
+  # Return the HTML document beginning:
+  return << "END_HTML_HEADER";
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+                      "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=$encoding">
+  <meta name="Generator" content="$NAME, $VERSION">
+  <meta name="Date" content="$timestamp">
+  $style_sheet  <title>$heading</title>
+</head>
+
+<body>
+
+<div id="wrapper">
+
+<div id="heading">
+  <table>
+    <tr>
+      <td>
+        <h1><a href="#">$heading</a></h1>
+        $timestamp
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div id="content">
+
+END_HTML_HEADER
+}
+
+# Return the HTML footer:
+sub html_footer {
+  my ($NAME, $VERSION) = (NAME, VERSION);
+
+  # Return the HTML document closing:
+  return << "END_HTML_FOOTER";
+</div>
+
+<div id="footer">
+  Generated using <a href="http://w2do.blackened.cz/">$NAME $VERSION</a>.
+</div>
+
+</div>
+
+</body>
+</html>
+END_HTML_FOOTER
+}
+
+# Return the group header:
+sub group_header {
+  my ($group, $tasks, $done) = @_;
+
+  # Prepare the group statistics:
+  my $stats = sprintf "%d task%s, %d unfinished",
+                      $tasks, (($tasks != 1) ? 's' : ''),
+                      $tasks - $done;
+
+  # Return the group heading and the table header:
+  return << "END_GROUP_HEADER";
+<h2 class="todo_group">
+  <a name="$group">$group</a>
+  <span class="todo_stats">$stats</span>
+</h2>
+
+<table class="todo_tasks">
+  <tr>
+    <th class="todo_date">due date</th>
+    <th class="todo_priority">priority</th>
+    <th class="todo_state">state</th>
+    <th class="todo_description">task</th>
+  </tr>
+END_GROUP_HEADER
+}
+
+# Return the group footer:
+sub group_footer {
+  # Return the table closing:
+  return "</table>\n\n";
+}
+
+# Return the task entry:
+sub task_entry {
+  my ($date, $priority, $state, $task) = @_;
+
+  # Decide which class the task belongs to:
+  my $class      = ($state eq 't') ? ' class="todo_finished"' : '';
+
+  # Prepare the aliases:
+  my @priorities = ('very high', 'high', 'medium', 'low', 'very low');
+  $state         = ($state eq 't') ? 'ok' : '&nbsp;';
+  $priority      = $priorities[--$priority];
+
+  # Return the task entry:
+  return << "END_TASK_ENTRY";
+  <tr$class>
+    <td class="todo_date">$date</td>
+    <td class="todo_priority">$priority</td>
+    <td class="todo_state">$state</td>
+    <td class="todo_description">$task</td>
+  </tr>
+END_TASK_ENTRY
+}
+
+# Write items in the task list to the selected output:
+sub write_tasks {
+  my $args  = shift || die 'Missing argument';
+  my $stats = {};
+  my @data;
+
+  # Load matching tasks:
+  load_selection(\@data, undef, $args) or return 0;
+
+  # Get task list statistics:
+  get_stats($stats);
+
+  # Open the selected output for writing:
+  if (open(FILE, ">$outfile")) {
+    # Check whether the list is not empty:
+    if (@data) {
+      my $group = '';
+
+      # Write header:
+      print(FILE html_header()) or return 0 unless $bare;
+
+      # Process each task:
+      foreach my $line (sort @data) {
+        # Parse the task record:
+        $line =~ /^([^:]*):([^:]*):([1-5]):([ft]):(.*):(\d+)$/;
+
+        # Write heading when group changes:
+        if (lc($1) ne $group) {
+          # Write group closing if opened:
+          print FILE group_footer() if $group;
+
+          # Translate the group name to lower case:
+          $group = lc($1);
+
+          # Write group beginning:
+          print FILE group_header($1, $stats->{$group}->{tasks},
+                                      $stats->{$group}->{done});
+        }
+
+        # Write task entry:
+        print FILE task_entry($2, $3, $4, $5);
+      }
+
+      # Write group closing:
+      print FILE group_footer();
+
+      # Write footer:
+      print FILE html_footer() unless $bare;
+
+      # Close the outpt:
+      close(FILE);
+    }
+  }
+  else {
+    # Report failure:
+    print STDERR "Unable to write to `$outfile'.\n";
+
+    # Return failure:
+    return 0;
+  }
+
+  # Return success:
+  return 1;
+}
+
+# Fix the group name:
+sub fix_group {
+  my $group = shift || die 'Missing argument';
+
+  # Check whether it contains forbidden characters:
+  if ($group =~ /:/) {
+    # Display warning:
+    print STDERR "Colon is not allowed in the group name. Removing.\n";
+
+    # Remove forbidden characters:
+    $group =~ s/://g;
+  }
+
+  # Check the group name length:
+  if (length($group) > 10) {
+    # Display warning:
+    print STDERR "Group name too long. Stripping.\n";
+
+    # Strip it to the maximal allowed length:
+    $group = substr($group, 0, 10);
+  }
+
+  # Make sure the result is not empty:
+  unless ($group) {
+    # Display warning:
+    print STDERR "Group name is empty. Using the default group instead.\n";
+
+    # Use default group instead:
+    $group = 'general';
+  }
+
+  # Return the result:
+  return $group;
 }
 
 # Translate due date alias to YYYY-MM-DD string:
 sub translate_date {
-  my $date = shift;
+  my $date = shift || die 'Missing argument';
 
+  # Translate the alias:
   if    ($date =~ /^\d{4}-[01]\d-[0-3]\d$/) { return $date }
   elsif ($date eq 'anytime')   { return $date }
   elsif ($date eq 'today')     { return date_to_string(time) }
@@ -644,22 +622,26 @@ sub translate_date {
   elsif ($date eq 'tomorrow')  { return date_to_string(time + 86400) }
   elsif ($date eq 'month')     { return date_to_string(time + 2678400)  }
   elsif ($date eq 'year')      { return date_to_string(time + 31536000) }
-  else  { exit_with_error("Invalid due date `$date'.", 22) }
+  else  {
+    # Report failure and exit:
+    exit_with_error("Invalid due date `$date'.", 22);
+  }
 }
 
-# Translate given date to YYYY-MM-DD string:
-sub date_to_string {
-  my @date = localtime(shift);
-  return sprintf("%d-%02d-%02d", ($date[5] + 1900), ++$date[4], $date[3]);
-}
+# Translate due date alias to mask:
+sub translate_mask {
+  my $date = shift;
 
-# Display given message and immediately terminate the script:
-sub exit_with_error {
-  my $message = shift || 'An unspecified error has occurred.';
-  my $retval  = shift || 1;
-
-  print STDERR NAME . ": $message\n";
-  exit $retval;
+  # Translate the alias:
+  if ($date eq 'month') {
+    return substr(date_to_string(time), 0, 8) . '..';
+  }
+  elsif ($date eq 'year') {
+    return substr(date_to_string(time), 0, 5) . '..-..';
+  }
+  else {
+    return translate_date($date);
+  }
 }
 
 # Set up the option parser:
@@ -682,9 +664,10 @@ GetOptions(
   # Additional options:
   'savefile|s=s'   => sub { $savefile       = $_[1] },
   'output|o=s'     => sub { $outfile        = $_[1] },
+  'encoding|e=s'   => sub { $encoding       = $_[1] },
   'heading|H=s'    => sub { $heading        = $_[1] },
-  'dark|D'         => sub { $design         = 'dark' },
-  'blue|B'         => sub { $design         = 'blue' },
+  'inline|i'       => sub { $inline         = 1 },
+  'bare|b'         => sub { $bare           = 1 },
 );
 
 # Detect superfluous options:
@@ -692,25 +675,28 @@ if (scalar(@ARGV) != 0) {
   exit_with_error("Invalid option `$ARGV[0]'.", 22);
 }
 
-# Trim group option:
+# Fix the group option:
 if (my $value = $args{group}) {
-  $args{group} = substr($value, 0, 10);
+  $args{group} = fix_group($value);
 }
 
-# Translate due date option:
+# Translate the due date option:
 if (my $value = $args{date}) {
   $args{date} = translate_mask($value)
 }
 
-# Check priority option:
+# Check the priority option:
 if (my $value = $args{priority}) {
   unless ($value =~ /^[1-5]$/) {
     exit_with_error("Invalid priority `$value'.", 22);
   }
 }
 
-# Perform appropriate action:
-write_tasks($outfile, \%args);
+# Write the HTML file:
+write_tasks(\%args) or exit 1;
+
+# Write the CSS file:
+write_style_sheet() or exit 1 if ($bare && !$inline);
 
 # Return success:
 exit 0;
