@@ -700,3 +700,159 @@ write_style_sheet() or exit 1 if ($bare && !$inline);
 
 # Return success:
 exit 0;
+
+__END__
+
+=head1 NAME
+
+w2html - a HTML exporter for w2do
+
+=head1 SYNOPSIS
+
+B<w2html> [B<-bi>] [B<-H> I<heading>] [B<-e> I<encoding>] [B<-o> I<file>] [B<-s> I<file>] [B<-f>|B<-u>] [B<-d> I<date>] [B<-g> I<group>] [B<-p> I<priority>] [B<-t> I<task>]
+
+B<w2html> B<-h> | B<-v>
+
+=head1 DESCRIPTION
+
+B<w2html> is a HTML exporter for w2do, a simple to use yet efficient
+command-line todo manager written in Perl 5. All tasks are listed by
+default, but desired subset can be easily selected via specifying options.
+
+=head1 OPTIONS
+
+=head2 General Options
+
+=over
+
+=item B<-h>, B<--help>
+
+Display help message and exit.
+
+=item B<-v>, B<--version>
+
+Display version information and exit.
+
+=back
+
+=head2 Specifying Options
+
+=over
+
+=item B<-t> I<task>, B<--task> I<task>
+
+Specify the I<task> name.
+
+=item B<-g> I<group>, B<--group> I<group>
+
+Specify the I<group> name. The group name should be a single word with
+maximum of 10 characters, but longer names are shortened automatically.
+
+=item B<-d> I<date>, B<--date> I<date>
+
+Specify the due I<date>. Available options are B<anytime>, B<today>,
+B<yesterday>, B<tomorrow>, B<month>, B<year>, or an exact date in the
+YYYY-MM-DD format, e.g. 2008-06-17 for 17 June 2008.
+
+=item B<-p> I<priority>, B<--priority> I<priority>
+
+Specify the I<priority>. Available options are integers between B<1> and
+B<5>, where 1 represents the highest priority.
+
+=item B<-f>, B<--finished>
+
+Specify the finished task.
+
+=item B<-u>, B<--unfinished>
+
+Specify the unfinished task.
+
+=back
+
+=head2 Additional Options
+
+=over
+
+=item B<-H> I<heading>, B<--heading> I<heading>
+
+Use selected I<heading>.
+
+=item B<-o> I<file>, B<--output> I<file>
+
+Use selected I<file> instead of the standard output.
+
+=item B<-s> I<file>, B<--savefile> I<file>
+
+Use selected I<file> instead of the default C<~/.w2do> as a save file.
+
+=item B<-e> I<encoding>, B<--encoding> I<encoding>
+
+Specify the file I<encoding> in a form recognised by the W3C HTML 4.01
+standard (e.g. the default UTF-8).
+
+=item B<-b>, B<--bare>
+
+Leave out the HTML header and footer. This is especially useful when you
+are planning to embed the list to another page.
+
+=item B<-i>, B<--inline>
+
+Embed the style sheet to the page itself instead of creating a separate CSS
+file. Note that combining this option with B<-b> produces no style sheet at
+all, which might be handy occasionally.
+
+=back
+
+=head1 ENVIRONMENT
+
+=over
+
+=item B<W2DO_SAVEFILE>
+
+Use selected file instead of the default C<~/.w2do> as a save file.
+
+=back
+
+=head1 FILES
+
+=over
+
+=item I<~/.w2do>
+
+Default save file.
+
+=back
+
+=head1 SEE ALSO
+
+B<w2do>(1), B<w2text>(1), B<perl>(1).
+
+=head1 BUGS
+
+To report bugs or even send patches, you can either add new issue to the
+project bugtracker at <http://code.google.com/p/w2do/issues/>, visit the
+discussion group at <http://groups.google.com/group/w2do/>, or you can
+contact the author directly via e-mail.
+
+=head1 AUTHOR
+
+Written by Jaromir Hradilek <jhradilek@gmail.com>.
+
+Permission is granted to copy, distribute and/or modify this document under
+the terms of the GNU Free Documentation License, Version 1.3 or any later
+version published by the Free Software Foundation; with no Invariant
+Sections, no Front-Cover Texts, and no Back-Cover Texts.
+
+A copy of the license is included as a file called FDL in the main
+directory of the w2do source package.
+
+=head1 COPYRIGHT
+
+Copyright (C) 2008, 2009 Jaromir Hradilek
+
+This program is free software; see the source for copying conditions. It is
+distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.
+
+=cut
