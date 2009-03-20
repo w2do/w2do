@@ -522,19 +522,19 @@ sub write_tasks {
   my @data;
 
   # Load matching tasks:
-  load_selection(\@data, undef, $args) or return 0;
+  load_selection(\@data, undef, $args);
 
   # Get task list statistics:
   get_stats($stats);
 
   # Open the selected output for writing:
   if (open(FILE, ">$outfile")) {
+    # Write header:
+    print(FILE html_header()) or return 0 unless $bare;
+
     # Check whether the list is not empty:
     if (@data) {
       my $group = '';
-
-      # Write header:
-      print(FILE html_header()) or return 0 unless $bare;
 
       # Process each task:
       foreach my $line (sort @data) {
@@ -560,13 +560,17 @@ sub write_tasks {
 
       # Write group closing:
       print FILE group_footer();
-
-      # Write footer:
-      print FILE html_footer() unless $bare;
-
-      # Close the outpt:
-      close(FILE);
     }
+    else {
+      # Report an empty list:
+      print FILE "<p>The task list is empty.</p>\n\n";
+    }
+
+    # Write footer:
+    print FILE html_footer() unless $bare;
+
+    # Close the outpt:
+    close(FILE);
   }
   else {
     # Report failure:
