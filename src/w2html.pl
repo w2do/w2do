@@ -499,6 +499,11 @@ sub task_entry {
   $state         = ($state eq 't') ? 'ok' : '&nbsp;';
   $priority      = $priorities[--$priority];
 
+  # Escape reserved characters:
+  $task =~ s/&/&amp;/g;
+  $task =~ s/</&lt;/g;
+  $task =~ s/>/&gt;/g;
+
   # Return the task entry:
   return << "END_TASK_ENTRY";
   <tr$class>
