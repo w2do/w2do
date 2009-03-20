@@ -692,6 +692,11 @@ if (my $value = $args{priority}) {
   }
 }
 
+# Force embedded style sheet when writing to STDOUT:
+if ($outfile eq '-') {
+  $inline = 1;
+}
+
 # Write the HTML file:
 write_tasks(\%args) or exit 1;
 
@@ -798,8 +803,7 @@ are planning to embed the list to another page.
 =item B<-i>, B<--inline>
 
 Embed the style sheet to the page itself instead of creating a separate CSS
-file. Note that combining this option with B<-b> produces no style sheet at
-all, which might be handy occasionally.
+file.
 
 =back
 
