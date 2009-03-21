@@ -24,7 +24,7 @@ use Getopt::Long;
 
 # General script information:
 use constant NAME    => basename($0, '.pl');       # Script name.
-use constant VERSION => '2.1.1';                   # Script version.
+use constant VERSION => '2.2.0';                   # Script version.
 
 # General script settings:
 our $HOMEDIR         = $ENV{HOME}          || $ENV{USERPROFILE} || '.';
@@ -723,7 +723,9 @@ w2html - a HTML exporter for w2do
 
 =head1 SYNOPSIS
 
-B<w2html> [B<-bi>] [B<-H> I<heading>] [B<-e> I<encoding>] [B<-o> I<file>] [B<-s> I<file>] [B<-f>|B<-u>] [B<-d> I<date>] [B<-g> I<group>] [B<-p> I<priority>] [B<-t> I<task>]
+B<w2html> [B<-bi>] [B<-H> I<heading>] [B<-e> I<encoding>] [B<-o> I<file>]
+[B<-s> I<file>] [B<-f>|B<-u>] [B<-d> I<date>] [B<-g> I<group>] [B<-p>
+I<priority>] [B<-t> I<task>]
 
 B<w2html> B<-h> | B<-v>
 

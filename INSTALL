@@ -49,6 +49,10 @@ or, if you have previously changed the destination directory,
 
 will completely remove all installed files.
 
+On the other hand, you can also run the scripts directly from their present
+location or copy the content of src/ directory somewhere in the $PATH your-
+self.
+
 
 3. Installing on Windows
 
