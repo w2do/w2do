@@ -357,7 +357,7 @@ sub write_style_sheet {
   return 0 if $outfile eq '-';
 
   # Derive the style sheet file name:
-  (my $file = $outfile) =~ s/(\.html?|\.php|)$/.css/;
+  (my $file = basename($outfile)) =~ s/(\.html?|\.php|)$/.css/;
 
   # Open the file for writing:
   if (open(STYLE, ">$file")) {
