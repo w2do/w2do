@@ -33,6 +33,7 @@ our $heading         = $ENV{USERNAME}      ? "$ENV{USERNAME}'s task list"
                                            : "current task list";
 our $encoding        = 'UTF-8';                    # Save file encoding.
 our $outfile         = '-';                        # Output file name.
+our $preserve        = 0;                          # Preserve style sheet?
 our $inline          = 0;                          # Embed the style sheet?
 our $bare            = 0;                          # Leave out the HTML
                                                    # header and footer?
@@ -297,7 +298,7 @@ sub display_help {
 
   # Print the message:
   print << "END_HELP";
-Usage: $NAME [-bi] [-H heading] [-e encoding] [-o file] [-s file]
+Usage: $NAME [-biP] [-H heading] [-e encoding] [-o file] [-s file]
               [-f|-u] [-d date] [-g group] [-p priority] [-t task]
        $NAME -h | -v
 
@@ -321,9 +322,10 @@ Specifying options:
 Additional options:
 
   -H, --heading text       use selected document heading
+  -e, --encoding encoding  use selected file encoding
   -s, --savefile file      use selected file instead of the default ~/.w2do
   -o, --output file        use selected file instead of the standard output
-  -e, --encoding encoding  use selected file encoding
+  -P, --preserve           do not touch existing style sheet if present
   -b, --bare               leave out the HTML header and footer
   -i, --inline             embed the style sheet
 END_HELP
@@ -359,23 +361,26 @@ sub write_style_sheet {
   # Derive the style sheet file name:
   (my $file = basename($outfile)) =~ s/(\.html?|\.php|)$/.css/;
 
-  # Open the file for writing:
-  if (open(STYLE, ">$file")) {
-    # Write the document structure related part:
-    print STYLE $css_structure unless $bare;
+  # Do not rewrite existing style sheet if its preservation is requested:
+  unless (-e $file && $preserve) {
+    # Open the file for writing:
+    if (open(STYLE, ">$file")) {
+      # Write the document structure related part:
+      print STYLE $css_structure unless $bare;
 
-    # Write the tasks related part:
-    print STYLE $css_tasks;
+      # Write the tasks related part:
+      print STYLE $css_tasks;
 
-    # Close the file:
-    close(STYLE);
-  }
-  else {
-    # Report failure:
-    print STDERR "Unable to write to `$file'.\n";
+      # Close the file:
+      close(STYLE);
+    }
+    else {
+      # Report failure:
+      print STDERR "Unable to write to `$file'.\n";
 
-    # Return failure:
-    return 0;
+      # Return failure:
+      return 0;
+    }
   }
 
   # Return the LINK element:
@@ -675,6 +680,7 @@ GetOptions(
   'output|o=s'     => sub { $outfile        = $_[1] },
   'encoding|e=s'   => sub { $encoding       = $_[1] },
   'heading|H=s'    => sub { $heading        = $_[1] },
+  'preserve|P'     => sub { $preserve       = 1 },
   'inline|i'       => sub { $inline         = 1 },
   'bare|b'         => sub { $bare           = 1 },
 );
@@ -723,7 +729,7 @@ w2html - a HTML exporter for w2do
 
 =head1 SYNOPSIS
 
-B<w2html> [B<-bi>] [B<-H> I<heading>] [B<-e> I<encoding>] [B<-o> I<file>]
+B<w2html> [B<-biP>] [B<-H> I<heading>] [B<-e> I<encoding>] [B<-o> I<file>]
 [B<-s> I<file>] [B<-f>|B<-u>] [B<-d> I<date>] [B<-g> I<group>] [B<-p>
 I<priority>] [B<-t> I<task>]
 
@@ -793,6 +799,11 @@ Specify the unfinished task.
 
 Use selected I<heading>.
 
+=item B<-e> I<encoding>, B<--encoding> I<encoding>
+
+Specify the file I<encoding> in a form recognised by the W3C HTML 4.01
+standard (e.g. the default UTF-8).
+
 =item B<-o> I<file>, B<--output> I<file>
 
 Use selected I<file> instead of the standard output.
@@ -801,10 +812,10 @@ Use selected I<file> instead of the standard output.
 
 Use selected I<file> instead of the default C<~/.w2do> as a save file.
 
-=item B<-e> I<encoding>, B<--encoding> I<encoding>
+=item B<-P>, B<--preserve>
 
-Specify the file I<encoding> in a form recognised by the W3C HTML 4.01
-standard (e.g. the default UTF-8).
+Do not rewrite existing style sheet if present (e.g. because it contains
+some local changes).
 
 =item B<-b>, B<--bare>
 
@@ -814,7 +825,8 @@ are planning to embed the list to another page.
 =item B<-i>, B<--inline>
 
 Embed the style sheet to the page itself instead of creating a separate CSS
-file.
+file. Note that combining this option with C<-b> results in no style sheet
+at all.
 
 =back
 
