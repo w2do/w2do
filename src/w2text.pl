@@ -25,7 +25,7 @@ use Getopt::Long;
 
 # General script information:
 use constant NAME    => basename($0, '.pl');       # Script name.
-use constant VERSION => '2.2.0';                   # Script version.
+use constant VERSION => '2.2.1';                   # Script version.
 
 # General script settings:
 our $HOMEDIR         = $ENV{HOME}          || $ENV{USERPROFILE} || '.';

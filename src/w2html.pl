@@ -24,7 +24,7 @@ use Getopt::Long;
 
 # General script information:
 use constant NAME    => basename($0, '.pl');       # Script name.
-use constant VERSION => '2.2.0';                   # Script version.
+use constant VERSION => '2.2.1';                   # Script version.
 
 # General script settings:
 our $HOMEDIR         = $ENV{HOME}          || $ENV{USERPROFILE} || '.';
@@ -62,9 +62,9 @@ body {
 }
 
 #heading {
-  width: 728px;
   margin: auto;
   padding: 20px;
+  width: 728px;
   background-color: #2e2e2e;
   border-bottom: 2px solid #2a2a2a;
   border-top: 2px solid #323232;
@@ -91,9 +91,9 @@ body {
 }
 
 #footer {
-  clear: both;
   margin: 0px;
   padding: 10px 20px 10px 20px;
+  width: 728px;
   border-top: 1px solid #5f5f5f;
   border-bottom: 1px solid #3d3d3d;
   background-color: #4e4e4e;
