@@ -359,7 +359,7 @@ sub write_style_sheet {
   return 0 if $outfile eq '-';
 
   # Derive the style sheet file name:
-  (my $file = basename($outfile)) =~ s/(\.html?|\.php|)$/.css/;
+  (my $file = $outfile) =~ s/(\.html?|\.php|)$/.css/;
 
   # Do not rewrite existing style sheet if its preservation is requested:
   unless (-e $file && $preserve) {
@@ -384,7 +384,8 @@ sub write_style_sheet {
   }
 
   # Return the LINK element:
-  return "<link rel=\"stylesheet\" href=\"$file\" type=\"text/css\">\n";
+  return "<link rel=\"stylesheet\" href=\"" . basename($file) .
+         "\" type=\"text/css\">\n";
 }
 
 # Return the style sheet or a LINK element pointing to it:
