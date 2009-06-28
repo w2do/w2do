@@ -493,10 +493,11 @@ sub draw_progressbar {
 # Display detailed task list statistics:
 sub display_statistics {
   my $stats = {};
-  my $per;
+  my ($bar, $per, $rat);
 
   # Get task list statistics:
   my ($groups, $tasks, $undone) = get_stats($stats);
+  my  $done = $tasks - $undone;
 
   # Display overall statistics:
   printf "%d group%s, %d task%s, %d unfinished\n",
@@ -512,15 +513,27 @@ sub display_statistics {
     # Count group percentage:
     $per = int($stats->{$group}->{done} * 100 / $stats->{$group}->{tasks});
 
+    # Prepare the progress bar:
+    $bar = draw_progressbar($per);
+
+    # Prepare the finished/all ratio:
+    $rat = "($stats->{$group}->{done}/$stats->{$group}->{tasks})";
+
     # Display group progress:
-    printf "\n%-11s %s %d%%", "$group:", draw_progressbar($per), $per;
+    printf "\n%-11s %s %3d%% %s", "$group:", $bar, $per, $rat;
   }
 
   # Count overall percentage:
-  $per = $tasks ? int(($tasks - $undone) * 100 / $tasks) : 0;
+  $per = $tasks ? int($done * 100 / $tasks) : 0;
+
+  # Prepare the progress bar:
+  $bar = draw_progressbar($per);
+
+  # Prepare the finished/all ratio:
+  $rat = "($done/$tasks)";
 
   # Display overall progress:
-  printf "\n---\n%-11s %s %d%%\n", "total:", draw_progressbar($per), $per;
+  printf "\n---\n%-11s %s %3d%% %s\n", "total:", $bar, $per, $rat;
 
   # Return success:
   return 1;
