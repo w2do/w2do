@@ -499,10 +499,13 @@ sub display_statistics {
   my ($groups, $tasks, $undone) = get_stats($stats);
 
   # Display overall statistics:
-  printf "%d group%s, %d task%s, %d unfinished\n\n",
+  printf "%d group%s, %d task%s, %d unfinished\n",
          $groups, (($groups != 1) ? 's' : ''),
          $tasks,  (($tasks  != 1) ? 's' : ''),
          $undone;
+
+  # End here when the task list is empty:
+  return 1 unless $groups;
 
   # Process each group:
   foreach my $group (sort (keys %$stats)) {
@@ -510,14 +513,14 @@ sub display_statistics {
     $per = int($stats->{$group}->{done} * 100 / $stats->{$group}->{tasks});
 
     # Display group progress:
-    printf "%-11s %s %d%%\n", "$group:", draw_progressbar($per), $per;
+    printf "\n%-11s %s %d%%", "$group:", draw_progressbar($per), $per;
   }
 
   # Count overall percentage:
   $per = $tasks ? int(($tasks - $undone) * 100 / $tasks) : 0;
 
   # Display overall progress:
-  printf "---\n%-11s %s %d%%\n", "total:", draw_progressbar($per), $per;
+  printf "\n---\n%-11s %s %d%%\n", "total:", draw_progressbar($per), $per;
 
   # Return success:
   return 1;
