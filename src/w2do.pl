@@ -542,17 +542,24 @@ sub display_tasks {
     # Prepare the table layout:
     my $format  = " %-4s  %-10s  %-10s   %s    %s   %s\n";
     my $caption = " id    group       date        pri  sta  task" .
-                  ' 'x ($Text::Wrap::columns - 45) . "\n";
-    my $divider = '-'x  $Text::Wrap::columns . "\n";
-    my $border  = '='x  $Text::Wrap::columns . "\n";
+                  ' 'x ($Text::Wrap::columns - 45);
+    my $divider = '-'x  $Text::Wrap::columns;
+    my $border  = '='x  $Text::Wrap::columns;
     my $indent  = ' 'x  41;
 
     # Set up the line wrapper:
     $Text::Wrap::columns++;
 
-    # Display table header:
-    $coloured ? print colored ($caption, $headcol)
-              : print $border, $caption, $border;
+    # Check whether to use colours:
+    if ($coloured) {
+      # Display coloured table header:
+      print colored ($caption, $headcol);
+      print "\n";
+    }
+    else {
+      # Display plain table header:
+      print "$border\n$caption\n$border\n";
+    }
 
     # Process each task:
     foreach my $line (sort @data) {
@@ -563,7 +570,16 @@ sub display_tasks {
       if (lc($1) ne $current) {
         # Display the divider unless the first group is being listed:
         if ($group) {
-          $coloured ? print colored ($caption, $headcol) : print $divider;
+          # Check whether to use colours:
+          if ($coloured) {
+            # Display coloured table header:
+            print colored ($caption, $headcol);
+            print "\n";
+          }
+          else {
+            # Display divider:
+            print "$divider\n";
+          }
         }
 
         # Remember the current group:
