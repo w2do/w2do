@@ -33,6 +33,10 @@ our $heading         = $ENV{USERNAME}      ? "$ENV{USERNAME}'s task list"
                                            : "current task list";
 our $encoding        = 'UTF-8';                    # Save file encoding.
 our $outfile         = '-';                        # Output file name.
+our $with_id         = 1;                          # Include ID?
+our $with_date       = 1;                          # Include due date?
+our $with_pri        = 1;                          # Include priority?
+our $with_state      = 1;                          # Include state?
 our $preserve        = 0;                          # Preserve style sheet?
 our $inline          = 0;                          # Embed the style sheet?
 our $bare            = 0;                          # Leave out the HTML
@@ -150,6 +154,11 @@ table.todo_tasks tr {
 
 table.todo_tasks tr:hover {
   background-color: #dcdcdc;
+}
+
+table.todo_tasks .todo_id {
+  width: 50px;
+  text-align: center;
 }
 
 table.todo_tasks .todo_date {
@@ -298,7 +307,7 @@ sub display_help {
 
   # Print the message:
   print << "END_HELP";
-Usage: $NAME [-biP] [-H heading] [-e encoding] [-o file] [-s file]
+Usage: $NAME [-bikDIPS] [-H heading] [-e encoding] [-o file] [-s file]
               [-f|-u] [-d date] [-g group] [-p priority] [-t task]
        $NAME -h | -v
 
@@ -325,9 +334,13 @@ Additional options:
   -e, --encoding encoding  use selected file encoding
   -s, --savefile file      use selected file instead of the default ~/.w2do
   -o, --output file        use selected file instead of the standard output
-  -P, --preserve           do not touch existing style sheet if present
+  -k, --preserve           do not touch existing style sheet if present
   -b, --bare               leave out the HTML header and footer
   -i, --inline             embed the style sheet
+  -I, --no-id              do not include ID column
+  -D, --no-date            do not include due date column
+  -P, --no-priority        do not include priority column
+  -S, --no-state           do not include state column
 END_HELP
 
   # Return success:
@@ -470,6 +483,14 @@ sub group_header {
                       $tasks, (($tasks != 1) ? 's' : ''),
                       $tasks - $done;
 
+  # Prepare the table header columns:
+  my $cols = '';
+  $cols .= "    <th class=\"todo_id\">id</th>\n" if $with_id;
+  $cols .= "    <th class=\"todo_date\">due date</th>\n" if $with_date;
+  $cols .= "    <th class=\"todo_priority\">priority</th>\n" if $with_pri;
+  $cols .= "    <th class=\"todo_state\">state</th>\n" if $with_state;
+  $cols .= "    <th class=\"todo_description\">task</th>";
+
   # Return the group heading and the table header:
   return << "END_GROUP_HEADER";
 <h2 class="todo_group">
@@ -479,10 +500,7 @@ sub group_header {
 
 <table class="todo_tasks">
   <tr>
-    <th class="todo_date">due date</th>
-    <th class="todo_priority">priority</th>
-    <th class="todo_state">state</th>
-    <th class="todo_description">task</th>
+$cols
   </tr>
 END_GROUP_HEADER
 }
@@ -495,7 +513,7 @@ sub group_footer {
 
 # Return the task entry:
 sub task_entry {
-  my ($date, $priority, $state, $task) = @_;
+  my ($id, $date, $priority, $state, $task) = @_;
 
   # Decide which class the task belongs to:
   my $class      = ($state eq 't') ? ' class="todo_finished"' : '';
@@ -510,13 +528,18 @@ sub task_entry {
   $task =~ s/</&lt;/g;
   $task =~ s/>/&gt;/g;
 
+  # Prepare the table columns:
+  my $cols = '';
+  $cols .= "    <td class=\"todo_id\">$id</td>\n" if $with_id;
+  $cols .= "    <td class=\"todo_date\">$date</td>\n" if $with_date;
+  $cols .= "    <td class=\"todo_priority\">$priority</td>\n" if $with_pri;
+  $cols .= "    <td class=\"todo_state\">$state</td>\n" if $with_state;
+  $cols .= "    <td class=\"todo_description\">$task</td>";
+
   # Return the task entry:
   return << "END_TASK_ENTRY";
   <tr$class>
-    <td class="todo_date">$date</td>
-    <td class="todo_priority">$priority</td>
-    <td class="todo_state">$state</td>
-    <td class="todo_description">$task</td>
+$cols
   </tr>
 END_TASK_ENTRY
 }
@@ -561,7 +584,7 @@ sub write_tasks {
         }
 
         # Write task entry:
-        print FILE task_entry($2, $3, $4, $5);
+        print FILE task_entry($6, $2, $3, $4, $5);
       }
 
       # Write group closing:
@@ -681,9 +704,17 @@ GetOptions(
   'output|o=s'     => sub { $outfile        = $_[1] },
   'encoding|e=s'   => sub { $encoding       = $_[1] },
   'heading|H=s'    => sub { $heading        = $_[1] },
-  'preserve|P'     => sub { $preserve       = 1 },
+  'preserve|k'     => sub { $preserve       = 1 },
   'inline|i'       => sub { $inline         = 1 },
   'bare|b'         => sub { $bare           = 1 },
+  'no-id|I'        => sub { $with_id        = 0 },
+  'with-id'        => sub { $with_id        = 1 },
+  'no-date|D'      => sub { $with_date      = 0 },
+  'with-date'      => sub { $with_date      = 1 },
+  'no-priority|P'  => sub { $with_pri       = 0 },
+  'with-priority'  => sub { $with_pri       = 1 },
+  'no-state|S'     => sub { $with_state     = 0 },
+  'with-state'     => sub { $with_state     = 1 },
 );
 
 # Detect superfluous options:
@@ -730,9 +761,9 @@ w2html - a HTML exporter for w2do
 
 =head1 SYNOPSIS
 
-B<w2html> [B<-biP>] [B<-H> I<heading>] [B<-e> I<encoding>] [B<-o> I<file>]
-[B<-s> I<file>] [B<-f>|B<-u>] [B<-d> I<date>] [B<-g> I<group>] [B<-p>
-I<priority>] [B<-t> I<task>]
+B<w2html> [B<-bikDIPS>] [B<-H> I<heading>] [B<-e> I<encoding>] [B<-o>
+I<file>] [B<-s> I<file>] [B<-f>|B<-u>] [B<-d> I<date>] [B<-g> I<group>]
+[B<-p> I<priority>] [B<-t> I<task>]
 
 B<w2html> B<-h> | B<-v>
 
@@ -813,7 +844,7 @@ Use selected I<file> instead of the standard output.
 
 Use selected I<file> instead of the default C<~/.w2do> as a save file.
 
-=item B<-P>, B<--preserve>
+=item B<-k>, B<--preserve>
 
 Do not rewrite existing style sheet if present (e.g. because it contains
 some local changes).
@@ -828,6 +859,38 @@ are planning to embed the list to another page.
 Embed the style sheet to the page itself instead of creating a separate CSS
 file. Note that combining this option with C<-b> results in no style sheet
 at all.
+
+=item B<-I>, B<--no-id>
+
+Do not include ID column in the listing.
+
+=item B<--with-id>
+
+Include ID column in the listing; the default option.
+
+=item B<-D>, B<--no-date>
+
+Do not include due date column in the listing.
+
+=item B<--with-date>
+
+Include due date column in the listing; the default option.
+
+=item B<-P>, B<--no-priority>
+
+Do not include priority column in the listing.
+
+=item B<--with-priority>
+
+Include priority column in the listing; the default option.
+
+=item B<-S>, B<--no-state>
+
+Do not include state column in the listing.
+
+=item B<--with-state>
+
+Include state column in the listing; the default option.
 
 =back
 
