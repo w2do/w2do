@@ -396,6 +396,10 @@ General options:
   --remove-date date       remove all items with selected due date
   --purge-date date        remove all finished items with selected due date
 
+  --change-pri priority    change all items with selected priority
+  --remove-pri priority    remove all items with selected priority
+  --purge-pri priority     remove all finished items with selected priority
+
   --change-old             change all items with passed due date
   --remove-old             remove all items with passed due date
   --purge-old              remove all finished items with passed due date
@@ -770,6 +774,48 @@ sub purge_date {
   return 1;
 }
 
+# Change all items with selected priority:
+sub change_priority {
+  my (@selected, @data);
+
+  # Load selected tasks:
+  load_selection(\@selected, \@data, { priority => shift }) or return 0;
+
+  # Change selected items:
+  change_selection(\@selected, \@data, shift) or return 0;
+
+  # Return success:
+  return 1;
+}
+
+# Remove all items with selected priority:
+sub remove_priority {
+  my (@selected, @data);
+
+  # Load selected tasks:
+  load_selection(\@selected, \@data, { priority => shift }) or return 0;
+
+  # Remove selected items:
+  remove_selection(\@selected, \@data) or return 0;
+
+  # Return success:
+  return 1;
+}
+
+# Remove all finished items with selected priority:
+sub purge_priority {
+  my (@selected, @data);
+
+  # Load selected tasks:
+  load_selection(\@selected, \@data, { priority => shift }) or return 0;
+
+  # Purge selected items:
+  purge_selection(\@selected, \@data) or return 0;
+
+  # Return success:
+  return 1;
+}
+
 # Change all items with passed due date:
 sub change_old {
   my (@selected, @data);
@@ -974,13 +1020,17 @@ GetOptions(
   'remove-date=s'  => sub { $action = 23; $identifier = $_[1] },
   'purge-date=s'   => sub { $action = 24; $identifier = $_[1] },
 
-  'change-old'     => sub { $action = 32 },
-  'remove-old'     => sub { $action = 33 },
-  'purge-old'      => sub { $action = 34 },
+  'change-pri=i'   => sub { $action = 32; $identifier = $_[1] },
+  'remove-pri=i'   => sub { $action = 33; $identifier = $_[1] },
+  'purge-pri=i'    => sub { $action = 34; $identifier = $_[1] },
 
-  'change-all'     => sub { $action = 42 },
-  'remove-all'     => sub { $action = 43 },
-  'purge-all'      => sub { $action = 44 },
+  'change-old'     => sub { $action = 42 },
+  'remove-old'     => sub { $action = 43 },
+  'purge-old'      => sub { $action = 44 },
+
+  'change-all'     => sub { $action = 52 },
+  'remove-all'     => sub { $action = 53 },
+  'purge-all'      => sub { $action = 54 },
 
   'undo|U'         => sub { $action = 95 },
   'groups|G'       => sub { $action = 96 },
@@ -1015,6 +1065,13 @@ if ($action >= 22 && $action <= 24) {
 if (my $value = $args{priority}) {
   unless ($value =~ /^[1-5]$/) {
     exit_with_error("Invalid priority `$value'.", 22);
+  }
+}
+
+# Check the priority identifier:
+if ($action >= 32 && $action <= 34) {
+  unless ($identifier =~ /^[1-5]$/) {
+    exit_with_error("Invalid priority `$identifier'.", 22);
   }
 }
 
@@ -1065,26 +1122,38 @@ elsif ($action == 24) {
   purge_date($identifier) or exit 1;
 }
 elsif ($action == 32) {
+  # Change all items with selected priority:
+  change_priority($identifier, \%args) or exit 1;
+}
+elsif ($action == 33) {
+  # Remove all items with selected priority:
+  remove_priority($identifier) or exit 1;
+}
+elsif ($action == 34) {
+  # Remove all finished items with selected priority:
+  purge_priority($identifier) or exit 1;
+}
+elsif ($action == 42) {
   # Change all items with passed due date:
   change_old(\%args) or exit 1;
 }
-elsif ($action == 33) {
+elsif ($action == 43) {
   # Remove all items with passed due date:
   remove_old() or exit 1;
 }
-elsif ($action == 34) {
+elsif ($action == 44) {
   # Remove all finished items with passed due date:
   purge_old() or exit 1;
 }
-elsif ($action == 42) {
+elsif ($action == 52) {
   # Change all items in the task list:
   change_all(\%args) or exit 1;
 }
-elsif ($action == 43) {
+elsif ($action == 53) {
   # Remove all items from the task list:
   remove_all() or exit 1;
 }
-elsif ($action == 44) {
+elsif ($action == 54) {
   # Remove all finished items from the task list:
   purge_all() or exit 1;
 }
@@ -1183,6 +1252,19 @@ Remove all items with selected due I<date>.
 =item B<--purge-date> I<date>
 
 Remove all finished items with selected due I<date>.
+
+=item B<--change-pri> I<priority>
+
+Change all items with selected I<priority>. Further specifying options are
+required in order to take any effect.
+
+=item B<--remove-pri> I<priority>
+
+Remove all items with selected I<priority>.
+
+=item B<--purge-pri> I<priority>
+
+Remove all finished items with selected I<priority>.
 
 =item B<--change-old>
 
