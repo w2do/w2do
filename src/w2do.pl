@@ -1150,7 +1150,7 @@ GetOptions(
 
   'undo'           => sub { $action = 95 },
   'groups'         => sub { $action = 96 },
-  'stats'          => sub { $action = 97 },
+  'stats|stat'     => sub { $action = 97 },
 
   'help|h'         => sub { display_help();    exit 0 },
   'version|v'      => sub { display_version(); exit 0 },
@@ -1408,16 +1408,16 @@ Remove all items from the task list.
 
 Remove all finished items from the task list.
 
-=item B<-U>, B<--undo>
+=item B<--undo>
 
 Revert last action. When invoked, the data are restored from the backup
 file (i.e. C<~/.w2do.bak> by default), which is deleted at the same time.
 
-=item B<-G>, B<--groups>
+=item B<--groups>
 
 Display comma-delimited list of all groups in the task list.
 
-=item B<-S>, B<--stats>
+=item B<--stats>
 
 Display detailed task list statistics.
 
@@ -1489,9 +1489,49 @@ Display all messages; this is the default option.
 
 Use coloured output instead of the default plain text version.
 
-=item B<-P>, B<--plain>
+=item B<-X>, B<--plain>
 
 Use plain text output (no colours); this is the default option.
+
+=item B<-I>, B<--no-id>
+
+Do not display ID column in the listing.
+
+=item B<--with-id>
+
+Display ID column in the listing; the default option.
+
+=item B<-G>, B<--no-group>
+
+Do not display group column in the listing.
+
+=item B<--with-group>
+
+Display group column in the listing; the default option.
+
+=item B<-D>, B<--no-date>
+
+Do not display due date column in the listing.
+
+=item B<--with-date>
+
+Display due date column in the listing; the default option.
+
+=item B<-P>, B<--no-priority>
+
+Do not display priority column in the listing.
+
+=item B<--with-priority>
+
+Display priority column in the listing; the default option.
+
+=item B<-S>, B<--no-state>
+
+Do not display state column in the listing.
+
+=item B<--with-state>
+
+Display state column in the listing; the default option.
 
 =back
 
