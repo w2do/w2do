@@ -27,6 +27,9 @@ bindir  = $(prefix)/bin
 mandir  = $(prefix)/share/man
 man1dir = $(mandir)/man1
 
+# Additional information:
+VERSION = 2.2.3
+
 # Make rules;  please do not edit these unless you really know what you are
 # doing:
 .PHONY: all clean install uninstall
@@ -61,5 +64,5 @@ uninstall:
 	-rmdir $(bindir) $(man1dir) $(mandir)
 
 %.1: %.pl
-	$(POD2MAN) $^ $@
+	$(POD2MAN) --section=1 --release="Version $(VERSION)" $^ $@
 
