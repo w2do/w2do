@@ -533,9 +533,10 @@ General options:
   --remove-all             remove all items from the task list
   --purge-all              remove all finished items from the task list
 
-  -U, --undo               revert last action
-  -G, --groups             display list of groups in the task list
-  -S, --stats              display detailed task list statistics
+  --undo                   revert last action
+  --groups                 display list of groups in the task list
+  --stats                  display detailed task list statistics
+
   -h, --help               display this help and exit
   -v, --version            display version information and exit
 
@@ -558,6 +559,11 @@ Additional options:
   -q, --quiet              avoid displaying messages that are not necessary
   -C, --colour             use coloured output instead of the default plain
                            text version
+  -I, --no-id              do not display ID column
+  -G, --no-group           do not display group column
+  -D, --no-date            do not display due date column
+  -P, --no-priority        do not display priority column
+  -S, --no-state           do not display state column
 END_HELP
 
   # Return success:
@@ -1099,12 +1105,22 @@ GetOptions(
   'unfinished|u'   => sub { $args{state}    = 'f' },
 
   # Additional options:
-  'quiet|q'        => sub { $verbose             = 0 },
-  'verbose|V'      => sub { $verbose             = 1 },
-  'plain|P'        => sub { $coloured            = 0 },
-  'colour|color|C' => sub { $coloured            = 1 },
   'savefile|s=s'   => sub { $savefile            = $_[1] },
   'width|w=i'      => sub { $Text::Wrap::columns = $_[1] },
+  'quiet|q'        => sub { $verbose             = 0 },
+  'verbose|V'      => sub { $verbose             = 1 },
+  'plain|X'        => sub { $coloured            = 0 },
+  'colour|color|C' => sub { $coloured            = 1 },
+  'no-id|I'        => sub { $with_id             = 0 },
+  'with-id'        => sub { $with_id             = 1 },
+  'no-group|G'     => sub { $with_group          = 0 },
+  'with-group'     => sub { $with_group          = 1 },
+  'no-date|D'      => sub { $with_date           = 0 },
+  'with-date'      => sub { $with_date           = 1 },
+  'no-priority|P'  => sub { $with_pri            = 0 },
+  'with-priority'  => sub { $with_pri            = 1 },
+  'no-state|S'     => sub { $with_state          = 0 },
+  'with-state'     => sub { $with_state          = 1 },
 
   # General options:
   'list|l'         => sub { $action = 0 },
@@ -1132,9 +1148,9 @@ GetOptions(
   'remove-all'     => sub { $action = 53 },
   'purge-all'      => sub { $action = 54 },
 
-  'undo|U'         => sub { $action = 95 },
-  'groups|G'       => sub { $action = 96 },
-  'stats|S'        => sub { $action = 97 },
+  'undo'           => sub { $action = 95 },
+  'groups'         => sub { $action = 96 },
+  'stats'          => sub { $action = 97 },
 
   'help|h'         => sub { display_help();    exit 0 },
   'version|v'      => sub { display_version(); exit 0 },
