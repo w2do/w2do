@@ -39,7 +39,8 @@ our $with_group      = 1;                          # Include group name?
 our $with_date       = 1;                          # Include due date?
 our $with_pri        = 1;                          # Include priority?
 our $with_state      = 1;                          # Include state?
-
+our $bare            = 0;                          # Leave out the table
+                                                   # header and separators?
 # Appearance settings:
 $Text::Wrap::columns = $ENV{W2DO_WIDTH}    || 75;  # Default table width.
 our $coloured        = 0;                          # Use colourded output?
@@ -393,6 +394,9 @@ sub compose_progressbar {
 
 # Draw table header:
 sub draw_header {
+  # End here if the header is to be omitted:
+  return 1 if $bare;
+
   # Prepare the header layout:
   my $border = '='x ($Text::Wrap::columns - 1);
   my $header = ' ';
@@ -423,6 +427,9 @@ sub draw_header {
 
 # Draw table separator:
 sub draw_separator {
+  # End here if the separator is to be omitted:
+  return 1 if $bare;
+
   # Prepare the separator layout:
   my $separator = '-'x ($Text::Wrap::columns - 1);
   my $header    = ' ';
@@ -559,6 +566,7 @@ Additional options:
   -q, --quiet              avoid displaying messages that are not necessary
   -C, --colour             use coloured output instead of the default plain
                            text version
+  -b, --bare               do not display table header and separators
   -I, --no-id              do not display ID column
   -G, --no-group           do not display group column
   -D, --no-date            do not display due date column
@@ -1111,6 +1119,8 @@ GetOptions(
   'verbose|V'      => sub { $verbose             = 1 },
   'plain|X'        => sub { $coloured            = 0 },
   'colour|color|C' => sub { $coloured            = 1 },
+  'no-bare|B'      => sub { $bare                = 0 },
+  'bare|b'         => sub { $bare                = 1 },
   'no-id|I'        => sub { $with_id             = 0 },
   'with-id'        => sub { $with_id             = 1 },
   'no-group|G'     => sub { $with_group          = 0 },
@@ -1492,6 +1502,14 @@ Use coloured output instead of the default plain text version.
 =item B<-X>, B<--plain>
 
 Use plain text output (no colours); this is the default option.
+
+=item B<-b>, B<--bare>
+
+Do not display table header and group separators.
+
+=item B<-B>, B<--no-bare>
+
+Display table header and group separators; the default option.
 
 =item B<-I>, B<--no-id>
 
