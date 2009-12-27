@@ -18,12 +18,12 @@
 use strict;
 use warnings;
 use locale;
-use Text::Wrap;
-use File::Copy;
 use File::Basename;
+use File::Copy;
 use File::Spec::Functions;
-use Term::ANSIColor;
 use Getopt::Long;
+use Term::ANSIColor;
+use Text::Wrap;
 
 # General script information:
 use constant NAME    => basename($0, '.pl');       # Script name.
@@ -34,6 +34,11 @@ our $homedir         = $ENV{HOME}          || $ENV{USERPROFILE} || '.';
 our $savefile        = $ENV{W2DO_SAVEFILE} || catfile($homedir, '.w2do');
 our $backext         = '.bak';                     # Backup file extension.
 our $verbose         = 1;                          # Verbosity level.
+our $with_id         = 1;                          # Include ID?
+our $with_group      = 1;                          # Include group name?
+our $with_date       = 1;                          # Include due date?
+our $with_pri        = 1;                          # Include priority?
+our $with_state      = 1;                          # Include state?
 
 # Appearance settings:
 $Text::Wrap::columns = $ENV{W2DO_WIDTH}    || 75;  # Default table width.
@@ -69,6 +74,8 @@ sub exit_with_error {
 # Translate given date to YYYY-MM-DD string:
 sub date_to_string {
   my $time = shift || time;
+
+  # Decompose the given time:
   my @date = localtime($time);
 
   # Return the result:
@@ -308,6 +315,8 @@ sub purge_selection {
 # Get task list statistics:
 sub get_stats {
   my $stats  = shift || die 'Missing argument';
+
+  # Initialize required variables:
   my ($groups, $tasks, $undone) = (0, 0, 0);
 
   # Open the save file for reading:
@@ -346,6 +355,7 @@ sub get_stats {
 
 # Choose first available ID:
 sub choose_id {
+  # Initialize required variables:
   my @used   = ();
   my $chosen = 1;
 
@@ -367,6 +377,121 @@ sub choose_id {
 
   # Return the result:
   return $chosen;
+}
+
+# Compose progress bar:
+sub compose_progressbar {
+  my $percent = shift || 0;
+
+  # Decide which pointer to use:
+  my $pointer = ($percent > 0 && $percent < 100) ? '>' : '';
+
+  # Return the progress bar string:
+  return '[' . '=' x int($percent/10) . $pointer .
+         ' ' x ($percent ? (9 - int($percent/10)) : 10) . ']';
+}
+
+# Draw table header:
+sub draw_header {
+  # Prepare the header layout:
+  my $border = '='x ($Text::Wrap::columns - 1);
+  my $header = ' ';
+  my $indent = 5;
+
+  # Add enabled header items:
+  $header .= 'id    '       and $indent += 6  if $with_id;
+  $header .= 'group       ' and $indent += 12 if $with_group;
+  $header .= 'date        ' and $indent += 12 if $with_date;
+  $header .= 'pri  '        and $indent += 5  if $with_pri;
+  $header .= 'sta  '        and $indent += 5  if $with_state;
+  $header .= 'task' . ' 'x ($Text::Wrap::columns - 1 - $indent);
+
+  # Check whether to use colours:
+  unless ($coloured) {
+    # Display plain table header:
+    print "$border\n$header\n$border\n";
+  }
+  else {
+    # Display coloured table header:
+    print colored ($header, $headcol);
+    print "\n";
+  }
+
+  # Return success:
+  return 1;
+}
+
+# Draw table separator:
+sub draw_separator {
+  # Prepare the separator layout:
+  my $separator = '-'x ($Text::Wrap::columns - 1);
+  my $header    = ' ';
+  my $indent    = 5;
+
+  # Add enabled header items:
+  $header .= 'id    '       and $indent += 6  if $with_id;
+  $header .= 'group       ' and $indent += 12 if $with_group;
+  $header .= 'date        ' and $indent += 12 if $with_date;
+  $header .= 'pri  '        and $indent += 5  if $with_pri;
+  $header .= 'sta  '        and $indent += 5  if $with_state;
+  $header .= 'task' . ' 'x ($Text::Wrap::columns - 1 - $indent);
+
+  # Check whether to use colours:
+  unless ($coloured) {
+    # Display plain separator:
+    print "$separator\n";
+  }
+  else {
+    # Display coloured separator:
+    print colored ($header, $headcol);
+    print "\n";
+  }
+
+  # Return success:
+  return 1;
+}
+
+# Draw table row:
+sub draw_row {
+  my ($id, $group, $date, $priority, $state, $task) = @_;
+
+  # Initialize required variables:
+  my $row    = ' ';
+  my $indent = 1;
+
+  # Add enabled items:
+  $row .= sprintf("%-4s  ", $id)       and $indent += 6  if $with_id;
+  $row .= sprintf("%-10s  ", $group)   and $indent += 12 if $with_group;
+  $row .= sprintf("%-10s  ", $date)    and $indent += 12 if $with_date;
+  $row .= sprintf(" %s   ", $priority) and $indent += 5  if $with_pri;
+  $row .= sprintf(" %s   ", $state)    and $indent += 5  if $with_state;
+
+  # Prepare the task entry:
+  $task =  wrap(' 'x $indent, ' 'x $indent, $task);
+  $task =~ s/\s+//;
+
+  # Add the task entry:
+  $row .= $task;
+
+  # Check whether to use colours:
+  unless ($coloured) {
+    # Display the task entry:
+    print "$row\n";
+  }
+  else {
+    # Set up colours:
+    print color $donecol  if $state eq 'f';
+    print color $todaycol if $state ne 'f' && $date eq 'today';
+
+    # Display the task entry:
+    print "$row\n";
+
+    # Reset colours:
+    print color 'reset';
+  }
+
+  # Return success:
+  return 1;
 }
 
 # Display usage information:
@@ -460,6 +585,7 @@ END_VERSION
 
 # Display a list of groups in the task list:
 sub display_groups {
+  # Initialize required variables:
   my $stats = {};
 
   # Get task list statistics:
@@ -482,20 +608,9 @@ sub display_groups {
   return 1;
 }
 
-# Draw progress bar:
-sub draw_progressbar {
-  my $percent = shift || 0;
-
-  # Decide which pointer to use:
-  my $pointer = ($percent > 0 && $percent < 100) ? '>' : '';
-
-  # Return the progress bar string:
-  return '[' . '=' x int($percent/10) . $pointer .
-         ' ' x ($percent ? (9 - int($percent/10)) : 10) . ']';
-}
-
 # Display detailed task list statistics:
 sub display_statistics {
+  # Initialize required variables:
   my $stats = {};
   my ($bar, $per, $rat);
 
@@ -518,7 +633,7 @@ sub display_statistics {
     $per = int($stats->{$group}->{done} * 100 / $stats->{$group}->{tasks});
 
     # Prepare the progress bar:
-    $bar = draw_progressbar($per);
+    $bar = compose_progressbar($per);
 
     # Prepare the finished/all ratio:
     $rat = "($stats->{$group}->{done}/$stats->{$group}->{tasks})";
@@ -531,7 +646,7 @@ sub display_statistics {
   $per = $tasks ? int($done * 100 / $tasks) : 0;
 
   # Prepare the progress bar:
-  $bar = draw_progressbar($per);
+  $bar = compose_progressbar($per);
 
   # Prepare the finished/all ratio:
   $rat = "($done/$tasks)";
@@ -546,6 +661,8 @@ sub display_statistics {
 # Display items in the task list:
 sub display_tasks {
   my $args = shift;
+
+  # Initialize required variables:
   my @data;
 
   # Load matching tasks:
@@ -553,30 +670,15 @@ sub display_tasks {
 
   # Check whether the list is not empty:
   if (@data) {
-    my $current = '';
+    # Initialize required variables:
     my ($id, $group, $date, $priority, $state, $task);
-
-    # Prepare the table layout:
-    my $format  = " %-4s  %-10s  %-10s   %s    %s   %s\n";
-    my $caption = " id    group       date        pri  sta  task" .
-                  ' 'x ($Text::Wrap::columns - 45);
-    my $divider = '-'x  $Text::Wrap::columns;
-    my $border  = '='x  $Text::Wrap::columns;
-    my $indent  = ' 'x  41;
+    my $current = '';
 
     # Set up the line wrapper:
     $Text::Wrap::columns++;
 
-    # Check whether to use colours:
-    if ($coloured) {
-      # Display coloured table header:
-      print colored ($caption, $headcol);
-      print "\n";
-    }
-    else {
-      # Display plain table header:
-      print "$border\n$caption\n$border\n";
-    }
+    # Display the table header:
+    draw_header();
 
     # Process each task:
     foreach my $line (sort @data) {
@@ -586,18 +688,7 @@ sub display_tasks {
       # Check whether the group has changed:
       if (lc($1) ne $current) {
         # Display the divider unless the first group is being listed:
-        if ($group) {
-          # Check whether to use colours:
-          if ($coloured) {
-            # Display coloured table header:
-            print colored ($caption, $headcol);
-            print "\n";
-          }
-          else {
-            # Display divider:
-            print "$divider\n";
-          }
-        }
+        draw_separator() if $group;
 
         # Remember the current group:
         $current = lc($1);
@@ -614,18 +705,10 @@ sub display_tasks {
       $group    = $1;
       $priority = $3;
       $state    = ($4 eq 'f') ? '-' : 'f';
-      $task     =  wrap($indent, $indent, $5); $task =~ s/\s+//;
-
-      # Set up colours:
-      print color $donecol  if $coloured && $state eq 'f';
-      print color $todaycol if $coloured && $state ne 'f'
-                                         && $date  eq 'today';
+      $task     = $5;
 
       # Display the task entry:
-      printf($format, $id, $group, $date, $priority, $state, $task);
-
-      # Reset colours:
-      print color 'reset'   if $coloured;
+      draw_row($id, $group, $date, $priority, $state, $task);
     }
   }
   else {
@@ -664,6 +747,7 @@ sub add_task {
 
 # Change selected item in the task list:
 sub change_task {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected task:
@@ -678,6 +762,7 @@ sub change_task {
 
 # Remove selected item from the task list:
 sub remove_task {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected task:
@@ -692,6 +777,7 @@ sub remove_task {
 
 # Change all items in the selected group:
 sub change_group {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -706,6 +792,7 @@ sub change_group {
 
 # Remove all items in the selected group:
 sub remove_group {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -720,6 +807,7 @@ sub remove_group {
 
 # Remove all finished items in the selected group:
 sub purge_group {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -734,6 +822,7 @@ sub purge_group {
 
 # Change all items with selected due date:
 sub change_date {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -748,6 +837,7 @@ sub change_date {
 
 # Remove all items with the selected due date:
 sub remove_date {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -762,6 +852,7 @@ sub remove_date {
 
 # Remove all finished items with selected due date:
 sub purge_date {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -776,6 +867,7 @@ sub purge_date {
 
 # Change all items with selected priority:
 sub change_priority {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -790,6 +882,7 @@ sub change_priority {
 
 # Remove all items with selected priority:
 sub remove_priority {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -804,6 +897,7 @@ sub remove_priority {
 
 # Remove all finished items with selected priority:
 sub purge_priority {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -818,6 +912,7 @@ sub purge_priority {
 
 # Change all items with passed due date:
 sub change_old {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -832,6 +927,7 @@ sub change_old {
 
 # Remove all items with passed due date:
 sub remove_old {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -846,6 +942,7 @@ sub remove_old {
 
 # Purge all items with passed due date:
 sub purge_old {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load selected tasks:
@@ -860,6 +957,7 @@ sub purge_old {
 
 # Change all items in the task list:
 sub change_all {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load all tasks:
@@ -874,6 +972,7 @@ sub change_all {
 
 # Remove all items from the task list:
 sub remove_all {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load all tasks:
@@ -888,6 +987,7 @@ sub remove_all {
 
 # Remove all finished items from the task list:
 sub purge_all {
+  # Initialize required variables:
   my (@selected, @data);
 
   # Load all tasks:
