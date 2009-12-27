@@ -59,6 +59,8 @@ sub exit_with_error {
 # Translate given date to YYYY-MM-DD string:
 sub date_to_string {
   my $time = shift || time;
+
+  # Decompose the given time:
   my @date = localtime($time);
 
   # Return the result:
@@ -171,6 +173,8 @@ END_VERSION
 # Write items in the task list to the selected output:
 sub write_tasks {
   my ($outfile, $args) = @_;
+
+  # Initialize required variables:
   my @data;
 
   # Load matching tasks:
