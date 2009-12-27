@@ -211,6 +211,8 @@ sub exit_with_error {
 # Translate given date to YYYY-MM-DD string:
 sub date_to_string {
   my $time = shift || time;
+
+  # Decompose the given time:
   my @date = localtime($time);
 
   # Return the result:
@@ -265,6 +267,8 @@ sub load_selection {
 # Get task list statistics:
 sub get_stats {
   my $stats  = shift || die 'Missing argument';
+
+  # Initialize required variables:
   my ($groups, $tasks, $undone) = (0, 0, 0);
 
   # Open the save file for reading:
@@ -420,6 +424,8 @@ END_STYLE_SHEET
 # Return the HTML header:
 sub html_header {
   my ($NAME, $VERSION) = (NAME, VERSION);
+
+  # Initialize required variables:
   my $style_sheet      = style_sheet() || "\n";
   my $timestamp        = localtime(time);
 
@@ -547,6 +553,8 @@ END_TASK_ENTRY
 # Write items in the task list to the selected output:
 sub write_tasks {
   my $args  = shift || die 'Missing argument';
+
+  # Initialize required variables:
   my $stats = {};
   my @data;
 
@@ -706,6 +714,7 @@ GetOptions(
   'heading|H=s'    => sub { $heading        = $_[1] },
   'preserve|k'     => sub { $preserve       = 1 },
   'inline|i'       => sub { $inline         = 1 },
+  'no-bare|B'      => sub { $bare           = 0 },
   'bare|b'         => sub { $bare           = 1 },
   'no-id|I'        => sub { $with_id        = 0 },
   'with-id'        => sub { $with_id        = 1 },
@@ -853,6 +862,10 @@ some local changes).
 
 Leave out the HTML header and footer. This is especially useful when you
 are planning to embed the list to another page.
+
+=item B<-B>, B<--no-bare>
+
+Include HTML header and footer; the default option.
 
 =item B<-i>, B<--inline>
 
