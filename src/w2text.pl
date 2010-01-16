@@ -356,7 +356,7 @@ w2text - a plain text exporter for w2do
 
 =head1 SYNOPSIS
 
-B<w2text> [B<-S>] [B<-o> I<file>] [B<-s> I<file>] [B<-w> I<width>]
+B<w2text> [B<-b>] [B<-o> I<file>] [B<-s> I<file>] [B<-w> I<width>]
 [B<-f>|B<-u>] [B<-d> I<date>] [B<-g> I<group>] [B<-p> I<priority>] [B<-t>
 I<task>]
 
@@ -434,10 +434,14 @@ Use selected I<file> instead of the default C<~/.w2do> as a save file.
 
 Use selected line I<width>; the minimal value is B<75>.
 
-=item B<-S>, B<--shallow>
+=item B<-b>, B<--bare>
 
 Organise tasks as a single list instead of listing them by groups they
 belong to.
+
+=item B<-B>, B<--no-bare>
+
+Organise tasks to the separate groups; the default option.
 
 =back
 
