@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # w2text, a plain text exporter for w2do
-# Copyright (C) 2008, 2009 Jaromir Hradilek
+# Copyright (C) 2008, 2009, 2010 Jaromir Hradilek
 
 # This program is  free software:  you can redistribute it and/or modify it
 # under  the terms  of the  GNU General Public License  as published by the
@@ -25,7 +25,7 @@ use Getopt::Long;
 
 # General script information:
 use constant NAME    => basename($0, '.pl');       # Script name.
-use constant VERSION => '2.2.3';                   # Script version.
+use constant VERSION => '2.3.0';                   # Script version.
 
 # General script settings:
 our $HOMEDIR         = $ENV{HOME}          || $ENV{USERPROFILE} || '.';
@@ -161,7 +161,7 @@ sub display_version {
   print << "END_VERSION";
 $NAME $VERSION
 
-Copyright (C) 2008, 2009 Jaromir Hradilek
+Copyright (C) 2008, 2009, 2010 Jaromir Hradilek
 This program is free software; see the source for copying conditions. It is
 distributed in the hope  that it will be useful,  but WITHOUT ANY WARRANTY;
 without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PAR-
@@ -369,8 +369,8 @@ B<w2text> B<-h> | B<-v>
 =head1 DESCRIPTION
 
 B<w2text> is a plain text exporter for w2do, a simple to use yet efficient
-command-line todo manager written in Perl 5. All tasks are listed by
-default, but desired subset can be easily selected via specifying options.
+command-line todo manager written in Perl. All tasks are listed by default,
+but desired subset can be easily selected via specifying options.
 
 =head1 OPTIONS
 
@@ -506,7 +506,7 @@ directory of the w2do source package.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2008, 2009 Jaromir Hradilek
+Copyright (C) 2008, 2009, 2010 Jaromir Hradilek
 
 This program is free software; see the source for copying conditions. It is
 distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;

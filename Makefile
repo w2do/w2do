@@ -1,5 +1,5 @@
 # makefile for w2do, a simple text-based todo manager
-# Copyright (C) 2008, 2009 Jaromir Hradilek
+# Copyright (C) 2008, 2009, 2010 Jaromir Hradilek
 
 # This program is  free software:  you can redistribute it and/or modify it
 # under  the terms  of the  GNU General Public License  as published by the
@@ -28,7 +28,7 @@ mandir  = $(prefix)/share/man
 man1dir = $(mandir)/man1
 
 # Additional information:
-VERSION = 2.2.3
+VERSION = 2.3.0
 
 # Make rules;  please do not edit these unless you really know what you are
 # doing:

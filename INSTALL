@@ -3,7 +3,7 @@
                          installation instructions
 
 
-   Copyright (C) 2008, 2009 Jaromir Hradilek
+   Copyright (C) 2008, 2009, 2010 Jaromir Hradilek
 
    Permission is granted to copy, distribute and/or modify this document
    under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -16,7 +16,7 @@
 
 1. General System Requirements
 
-All parts of w2do package  are standalone scripts written in Perl 5  and as
+All parts  of w2do package  are standalone scripts  written in Perl  and as
 such, they should be platform independent. However, working installation of
 Perl 5 is required in  order to run these scripts. If you  are using one of
 Unix-like operating systems, it is highly probable that you have it already

@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # w2do, a simple text-based todo manager
-# Copyright (C) 2008, 2009 Jaromir Hradilek
+# Copyright (C) 2008, 2009, 2010 Jaromir Hradilek
 
 # This program is  free software:  you can redistribute it and/or modify it
 # under  the terms  of the  GNU General Public License  as published by the
@@ -27,7 +27,7 @@ use Text::Wrap;
 
 # General script information:
 use constant NAME    => basename($0, '.pl');       # Script name.
-use constant VERSION => '2.2.3';                   # Script version.
+use constant VERSION => '2.3.0';                   # Script version.
 
 # General script settings:
 our $homedir         = $ENV{HOME}          || $ENV{USERPROFILE} || '.';
@@ -586,7 +586,7 @@ sub display_version {
   print << "END_VERSION";
 $NAME $VERSION
 
-Copyright (C) 2008, 2009 Jaromir Hradilek
+Copyright (C) 2008, 2009, 2010 Jaromir Hradilek
 This program is free software; see the source for copying conditions. It is
 distributed in the hope  that it will be useful,  but WITHOUT ANY WARRANTY;
 without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PAR-
@@ -1323,7 +1323,7 @@ B<w2do> [I<options>]
 =head1 DESCRIPTION
 
 B<w2do> is a simple to use yet efficient command-line todo manager written
-in Perl 5.
+in Perl.
 
 =head1 OPTIONS
 
@@ -1606,7 +1606,7 @@ directory of the w2do source package.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2008, 2009 Jaromir Hradilek
+Copyright (C) 2008, 2009, 2010 Jaromir Hradilek
 
 This program is free software; see the source for copying conditions. It is
 distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
