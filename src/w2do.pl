@@ -1105,65 +1105,65 @@ Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'bundling');
 # Parse command line options:
 GetOptions(
   # Specifying options:
-  'task|t=s'       => sub { $args{task}     = $_[1] },
-  'group|g=s'      => sub { $args{group}    = $_[1] },
-  'date|d=s'       => sub { $args{date}     = $_[1] },
-  'priority|p=i'   => sub { $args{priority} = $_[1] },
-  'finished|f'     => sub { $args{state}    = 't' },
-  'unfinished|u'   => sub { $args{state}    = 'f' },
+  'task|t=s'             => sub { $args{task}     = $_[1] },
+  'group|g=s'            => sub { $args{group}    = $_[1] },
+  'date|d=s'             => sub { $args{date}     = $_[1] },
+  'priority|p=i'         => sub { $args{priority} = $_[1] },
+  'finished|f'           => sub { $args{state}    = 't' },
+  'unfinished|u'         => sub { $args{state}    = 'f' },
 
   # Additional options:
-  'savefile|s=s'   => sub { $savefile            = $_[1] },
-  'width|w=i'      => sub { $Text::Wrap::columns = $_[1] },
-  'quiet|q'        => sub { $verbose             = 0 },
-  'verbose|V'      => sub { $verbose             = 1 },
-  'plain|X'        => sub { $coloured            = 0 },
-  'colour|color|C' => sub { $coloured            = 1 },
-  'no-bare|B'      => sub { $bare                = 0 },
-  'bare|b'         => sub { $bare                = 1 },
-  'no-id|I'        => sub { $with_id             = 0 },
-  'with-id'        => sub { $with_id             = 1 },
-  'no-group|G'     => sub { $with_group          = 0 },
-  'with-group'     => sub { $with_group          = 1 },
-  'no-date|D'      => sub { $with_date           = 0 },
-  'with-date'      => sub { $with_date           = 1 },
-  'no-priority|P'  => sub { $with_pri            = 0 },
-  'with-priority'  => sub { $with_pri            = 1 },
-  'no-state|S'     => sub { $with_state          = 0 },
-  'with-state'     => sub { $with_state          = 1 },
+  'savefile|s=s'         => sub { $savefile            = $_[1] },
+  'width|w=i'            => sub { $Text::Wrap::columns = $_[1] },
+  'quiet|q'              => sub { $verbose             = 0 },
+  'verbose|V'            => sub { $verbose             = 1 },
+  'no-colour|no-color|X' => sub { $coloured            = 0 },
+  'colour|color|C'       => sub { $coloured            = 1 },
+  'no-bare|B'            => sub { $bare                = 0 },
+  'bare|b'               => sub { $bare                = 1 },
+  'no-id|I'              => sub { $with_id             = 0 },
+  'with-id'              => sub { $with_id             = 1 },
+  'no-group|G'           => sub { $with_group          = 0 },
+  'with-group'           => sub { $with_group          = 1 },
+  'no-date|D'            => sub { $with_date           = 0 },
+  'with-date'            => sub { $with_date           = 1 },
+  'no-priority|P'        => sub { $with_pri            = 0 },
+  'with-priority'        => sub { $with_pri            = 1 },
+  'no-state|S'           => sub { $with_state          = 0 },
+  'with-state'           => sub { $with_state          = 1 },
 
   # General options:
-  'list|l'         => sub { $action = 0 },
-  'add|a=s'        => sub { $action = 1;  $args{task} = $_[1] },
-  'change|c=i'     => sub { $action = 2;  $identifier = $_[1] },
-  'remove|r=i'     => sub { $action = 3;  $identifier = $_[1] },
+  'list|l'               => sub { $action = 0 },
+  'add|a=s'              => sub { $action = 1;  $args{task} = $_[1] },
+  'change|c=i'           => sub { $action = 2;  $identifier = $_[1] },
+  'remove|r=i'           => sub { $action = 3;  $identifier = $_[1] },
 
-  'change-group=s' => sub { $action = 12; $identifier = $_[1] },
-  'remove-group=s' => sub { $action = 13; $identifier = $_[1] },
-  'purge-group=s'  => sub { $action = 14; $identifier = $_[1] },
+  'change-group=s'       => sub { $action = 12; $identifier = $_[1] },
+  'remove-group=s'       => sub { $action = 13; $identifier = $_[1] },
+  'purge-group=s'        => sub { $action = 14; $identifier = $_[1] },
 
-  'change-date=s'  => sub { $action = 22; $identifier = $_[1] },
-  'remove-date=s'  => sub { $action = 23; $identifier = $_[1] },
-  'purge-date=s'   => sub { $action = 24; $identifier = $_[1] },
+  'change-date=s'        => sub { $action = 22; $identifier = $_[1] },
+  'remove-date=s'        => sub { $action = 23; $identifier = $_[1] },
+  'purge-date=s'         => sub { $action = 24; $identifier = $_[1] },
 
-  'change-pri=i'   => sub { $action = 32; $identifier = $_[1] },
-  'remove-pri=i'   => sub { $action = 33; $identifier = $_[1] },
-  'purge-pri=i'    => sub { $action = 34; $identifier = $_[1] },
+  'change-pri=i'         => sub { $action = 32; $identifier = $_[1] },
+  'remove-pri=i'         => sub { $action = 33; $identifier = $_[1] },
+  'purge-pri=i'          => sub { $action = 34; $identifier = $_[1] },
 
-  'change-old'     => sub { $action = 42 },
-  'remove-old'     => sub { $action = 43 },
-  'purge-old'      => sub { $action = 44 },
+  'change-old'           => sub { $action = 42 },
+  'remove-old'           => sub { $action = 43 },
+  'purge-old'            => sub { $action = 44 },
 
-  'change-all'     => sub { $action = 52 },
-  'remove-all'     => sub { $action = 53 },
-  'purge-all'      => sub { $action = 54 },
+  'change-all'           => sub { $action = 52 },
+  'remove-all'           => sub { $action = 53 },
+  'purge-all'            => sub { $action = 54 },
 
-  'undo'           => sub { $action = 95 },
-  'groups'         => sub { $action = 96 },
-  'stats|stat'     => sub { $action = 97 },
+  'undo'                 => sub { $action = 95 },
+  'groups'               => sub { $action = 96 },
+  'stats|stat'           => sub { $action = 97 },
 
-  'help|h'         => sub { display_help();    exit 0 },
-  'version|v'      => sub { display_version(); exit 0 },
+  'help|h'               => sub { display_help();    exit 0 },
+  'version|v'            => sub { display_version(); exit 0 },
 );
 
 # Detect superfluous options:
@@ -1499,7 +1499,7 @@ Display all messages; this is the default option.
 
 Use coloured output instead of the default plain text version.
 
-=item B<-X>, B<--plain>
+=item B<-X>, B<--no-colour>, B<--no-color>
 
 Use plain text output (no colours); this is the default option.
 
