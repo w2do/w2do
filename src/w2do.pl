@@ -380,18 +380,6 @@ sub choose_id {
   return $chosen;
 }
 
-# Compose progress bar:
-sub compose_progressbar {
-  my $percent = shift || 0;
-
-  # Decide which pointer to use:
-  my $pointer = ($percent > 0 && $percent < 100) ? '>' : '';
-
-  # Return the progress bar string:
-  return '[' . '=' x int($percent/10) . $pointer .
-         ' ' x ($percent ? (9 - int($percent/10)) : 10) . ']';
-}
-
 # Draw table header:
 sub draw_header {
   # End here if the header is to be omitted:
@@ -494,6 +482,113 @@ sub draw_row {
     print "$row\n";
 
     # Reset colours:
+    print color 'reset';
+  }
+
+  # Return success:
+  return 1;
+}
+
+# Draw short stats:
+sub draw_short_statistics {
+  my ($groups, $tasks, $undone) = @_;
+
+  # Check whether to use colours:
+  unless ($coloured) {
+    # Display plain text overall statistics:
+    printf "%d group%s, %d task%s, %d unfinished\n",
+           $groups, (($groups != 1) ? 's' : ''),
+           $tasks,  (($tasks  != 1) ? 's' : ''),
+           $undone;
+  }
+  else {
+    # Display coloured overall statistics:
+    print colored ['bold'], $groups;
+    print (($groups != 1) ? ' groups, ' : ' group, ');
+    print colored ['bold'], $tasks;
+    print (($tasks  != 1) ? ' tasks, '  : ' task, ');
+    print colored ['bold'], $undone;
+    print " unfinished\n";
+  }
+
+  # Return success:
+  return 1;
+}
+
+# Draw group statistics:
+sub draw_group_statistics {
+  my ($group, $percentage, $done, $tasks) = @_;
+
+  # Print the group name:
+  printf "%-10s ", $group;
+
+  # Print the progress bar:
+  draw_progressbar($percentage);
+
+  # Print the finished/all ratio:
+  print " ($done/$tasks)\n";
+
+  # Return success:
+  return 1;
+}
+
+# Draw progress bar:
+sub draw_progressbar {
+  my $percentage = shift || 0;
+
+  # Check whether to use colours:
+  unless ($coloured) {
+    # Decide whether to use the pointer:
+    my $pointer = ($percentage > 0 && $percentage < 100) ? '>' : '';
+
+    # Print the progress bar:
+    print '[' . '=' x int($percentage / 10) . $pointer  .
+          ' ' x ($percentage ? (9 - int($percentage / 10)) : 10) . ']';
+
+    # Print the percentage:
+    printf " %3d%%", $percentage;
+  }
+  else {
+    # Specify the colour for each specific field:
+    my @colour = qw( red red red yellow yellow yellow yellow
+                     green green green );
+
+    # Count the number of filled fields:
+    my $filled = int($percentage / 10) + 1;
+
+    # Print the opening bracket:
+    print colored ['bold'], '[';
+
+    # Process each progressbar field separately:
+    for (my $index = 0; $index < 10; $index++) {
+      # Check which type of field to use:
+      if (($index + 1) < $filled) {
+        # Fill the field:
+        print colored ["$colour[$index]"], '=';
+      }
+      elsif (($index + 1) == $filled) {
+        # Check whether to use pointer or not:
+        if ($percentage > 0 && $percentage < 100) {
+          # Fill the field:
+          print colored ["$colour[$index]"], '>';
+        }
+        else {
+          # Fill the field:
+          print ' ';
+        }
+      }
+      else {
+        # Fill the field:
+        print ' ';
+      }
+    }
+
+    # Print the closing bracket:
+    print colored ['bold'], ']';
+
+    # Print the percentage:
+    print color 'bold';
+    printf " %3d%%", $percentage;
     print color 'reset';
   }
 
@@ -633,10 +728,10 @@ sub display_statistics {
   my  $done = $tasks - $undone;
 
   # Display overall statistics:
-  printf "%d group%s, %d task%s, %d unfinished\n",
-         $groups, (($groups != 1) ? 's' : ''),
-         $tasks,  (($tasks  != 1) ? 's' : ''),
-         $undone;
+  draw_short_statistics($groups, $tasks, $undone);
+
+  # Separate the lines:
+  print "\n" if $tasks;
 
   # End here when the task list is empty:
   return 1 unless $groups;
@@ -646,27 +741,19 @@ sub display_statistics {
     # Count group percentage:
     $per = int($stats->{$group}->{done} * 100 / $stats->{$group}->{tasks});
 
-    # Prepare the progress bar:
-    $bar = compose_progressbar($per);
-
-    # Prepare the finished/all ratio:
-    $rat = "($stats->{$group}->{done}/$stats->{$group}->{tasks})";
-
     # Display group progress:
-    printf "\n%-11s %s %3d%% %s", "$group:", $bar, $per, $rat;
+    draw_group_statistics($group, $per, $stats->{$group}->{done},
+                          $stats->{$group}->{tasks});
   }
 
-  # Count overall percentage:
+  # Separate the lines:
+  print "---\n" if $tasks;
+
+  # Count the overall percentage:
   $per = $tasks ? int($done * 100 / $tasks) : 0;
 
-  # Prepare the progress bar:
-  $bar = compose_progressbar($per);
-
-  # Prepare the finished/all ratio:
-  $rat = "($done/$tasks)";
-
   # Display overall progress:
-  printf "\n---\n%-11s %s %3d%% %s\n", "total:", $bar, $per, $rat;
+  draw_group_statistics('total', $per, $done, $tasks);
 
   # Return success:
   return 1;
