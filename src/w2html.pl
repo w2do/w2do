@@ -616,7 +616,7 @@ Additional options:
   -D, --no-date            do not include due date column
   -P, --no-priority        do not include priority column
   -S, --no-state           do not include state column
-  --stats                  include overall task list statistics
+  --with-stats, --stats    include overall task list statistics
 END_HELP
 
   # Return success:
@@ -1029,6 +1029,14 @@ Do not include state column in the listing.
 =item B<--with-state>
 
 Include state column in the listing; the default option.
+
+=item B<--with-stats>, B<--stats>
+
+Include overall task list statistics.
+
+=item B<--no-stats>
+
+Do not include overall task list statistics; the default option.
 
 =back
 
