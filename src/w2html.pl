@@ -616,6 +616,7 @@ Additional options:
   -D, --no-date            do not include due date column
   -P, --no-priority        do not include priority column
   -S, --no-state           do not include state column
+  --stats                  include overall task list statistics
 END_HELP
 
   # Return success:
@@ -692,7 +693,7 @@ sub write_tasks {
     }
     else {
       # Report an empty list:
-      print FILE "<p>The task list is empty.</p>\n\n";
+      print FILE "<p>No matching task found.</p>\n\n";
     }
 
     # Check whether to include overall statistics:
@@ -818,34 +819,36 @@ Getopt::Long::Configure('no_auto_abbrev', 'no_ignore_case', 'bundling');
 # Parse command line options:
 GetOptions(
   # General options:
-  'help|h'         => sub { display_help();    exit 0 },
-  'version|v'      => sub { display_version(); exit 0 },
+  'help|h'                => sub { display_help();    exit 0 },
+  'version|v'             => sub { display_version(); exit 0 },
 
   # Specifying options:
-  'task|t=s'       => sub { $args{task}     = $_[1] },
-  'group|g=s'      => sub { $args{group}    = $_[1] },
-  'date|d=s'       => sub { $args{date}     = $_[1] },
-  'priority|p=i'   => sub { $args{priority} = $_[1] },
-  'finished|f'     => sub { $args{state}    = 't' },
-  'unfinished|u'   => sub { $args{state}    = 'f' },
+  'task|t=s'              => sub { $args{task}     = $_[1] },
+  'group|g=s'             => sub { $args{group}    = $_[1] },
+  'date|d=s'              => sub { $args{date}     = $_[1] },
+  'priority|p=i'          => sub { $args{priority} = $_[1] },
+  'finished|f'            => sub { $args{state}    = 't' },
+  'unfinished|u'          => sub { $args{state}    = 'f' },
 
   # Additional options:
-  'savefile|s=s'   => sub { $savefile       = $_[1] },
-  'output|o=s'     => sub { $outfile        = $_[1] },
-  'encoding|e=s'   => sub { $encoding       = $_[1] },
-  'heading|H=s'    => sub { $heading        = $_[1] },
-  'preserve|k'     => sub { $preserve       = 1 },
-  'inline|i'       => sub { $inline         = 1 },
-  'no-bare|B'      => sub { $bare           = 0 },
-  'bare|b'         => sub { $bare           = 1 },
-  'no-id|I'        => sub { $with_id        = 0 },
-  'with-id'        => sub { $with_id        = 1 },
-  'no-date|D'      => sub { $with_date      = 0 },
-  'with-date'      => sub { $with_date      = 1 },
-  'no-priority|P'  => sub { $with_pri       = 0 },
-  'with-priority'  => sub { $with_pri       = 1 },
-  'no-state|S'     => sub { $with_state     = 0 },
-  'with-state'     => sub { $with_state     = 1 },
+  'savefile|s=s'          => sub { $savefile       = $_[1] },
+  'output|o=s'            => sub { $outfile        = $_[1] },
+  'encoding|e=s'          => sub { $encoding       = $_[1] },
+  'heading|H=s'           => sub { $heading        = $_[1] },
+  'preserve|k'            => sub { $preserve       = 1 },
+  'inline|i'              => sub { $inline         = 1 },
+  'no-bare|B'             => sub { $bare           = 0 },
+  'bare|b'                => sub { $bare           = 1 },
+  'no-id|I'               => sub { $with_id        = 0 },
+  'with-id'               => sub { $with_id        = 1 },
+  'no-date|D'             => sub { $with_date      = 0 },
+  'with-date'             => sub { $with_date      = 1 },
+  'no-priority|P'         => sub { $with_pri       = 0 },
+  'with-priority'         => sub { $with_pri       = 1 },
+  'no-state|S'            => sub { $with_state     = 0 },
+  'with-state'            => sub { $with_state     = 1 },
+  'no-stats|no-stat'      => sub { $with_stats     = 0 },
+  'stats|stat|with-stats' => sub { $with_stats     = 1 },
 );
 
 # Detect superfluous options:
