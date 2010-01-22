@@ -536,11 +536,11 @@ sub draw_group_statistics {
 sub draw_progressbar {
   my $percentage = shift || 0;
 
+  # Decide whether to use the pointer:
+  my $pointer = ($percentage > 0 && $percentage < 100) ? '>' : '';
+
   # Check whether to use colours:
   unless ($coloured) {
-    # Decide whether to use the pointer:
-    my $pointer = ($percentage > 0 && $percentage < 100) ? '>' : '';
-
     # Print the progress bar:
     print '[' . '=' x int($percentage / 10) . $pointer  .
           ' ' x ($percentage ? (9 - int($percentage / 10)) : 10) . ']';
@@ -549,39 +549,29 @@ sub draw_progressbar {
     printf " %3d%%", $percentage;
   }
   else {
-    # Specify the colour for each specific field:
-    my @colour = qw( red red red yellow yellow yellow yellow
-                     green green green );
-
-    # Count the number of filled fields:
-    my $filled = int($percentage / 10) + 1;
+    # Decide whether to use the pointer:
+    my $pointer = ($percentage > 0 && $percentage < 100) ? '>' : '';
 
     # Print the opening bracket:
     print colored ['bold'], '[';
 
-    # Process each progressbar field separately:
-    for (my $index = 0; $index < 10; $index++) {
-      # Check which type of field to use:
-      if (($index + 1) < $filled) {
-        # Fill the field:
-        print colored ["$colour[$index]"], '=';
-      }
-      elsif (($index + 1) == $filled) {
-        # Check whether to use pointer or not:
-        if ($percentage > 0 && $percentage < 100) {
-          # Fill the field:
-          print colored ["$colour[$index]"], '>';
-        }
-        else {
-          # Fill the field:
-          print ' ';
-        }
-      }
-      else {
-        # Fill the field:
-        print ' ';
-      }
+    # Pick the right colour:
+    if ($percentage <= 33) {
+      print color 'red';
     }
+    elsif ($percentage > 66) {
+      print color 'green';
+    }
+    else {
+      print color 'yellow';
+    }
+
+    # Print the progress bar:
+    print '=' x int($percentage / 10) . $pointer .
+          ' ' x ($percentage ? (9 - int($percentage / 10)) : 10);
+
+    # Reset the color:
+    print color 'reset';
 
     # Print the closing bracket:
     print colored ['bold'], ']';
