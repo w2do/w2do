@@ -559,7 +559,7 @@ sub compose_statistics_entry {
   my ($group, $percentage, $done, $tasks, $total) = @_;
 
   # Count the progress bar width:
-  my $width = $percentage * 2;
+  my $width = $percentage ? $percentage * 2 : 1;
 
   # Decide which class to use:
   my $class = $total ? 'todo_bluebar' : 'todo_greenbar';
