@@ -305,6 +305,186 @@ sub get_stats {
   return $groups, $tasks, $undone;
 }
 
+# Create a style sheet file and return the LINK element:
+sub write_style_sheet {
+  # Do not create the style sheet when writing to STDOUT:
+  return 0 if $outfile eq '-';
+
+  # Derive the style sheet file name:
+  (my $file = $outfile) =~ s/(\.html?|\.php|)$/.css/;
+
+  # Do not rewrite existing style sheet if its preservation is requested:
+  unless (-e $file && $preserve) {
+    # Open the file for writing:
+    if (open(STYLE, ">$file")) {
+      # Write the document structure related part:
+      print STYLE $css_structure unless $bare;
+
+      # Write the tasks related part:
+      print STYLE $css_tasks;
+
+      # Close the file:
+      close(STYLE);
+    }
+    else {
+      # Report failure:
+      print STDERR "Unable to write to `$file'.\n";
+
+      # Return failure:
+      return 0;
+    }
+  }
+
+  # Return the LINK element:
+  return "<link rel=\"stylesheet\" href=\"" . basename($file) .
+         "\" type=\"text/css\">\n";
+}
+
+# Return the style sheet or a LINK element pointing to it:
+sub compose_style_sheet {
+  # Check whether to have style sheet as a separate file:
+  unless ($inline) {
+    # Return the LINK element:
+    return write_style_sheet();
+  }
+  else {
+    # Return the style sheet:
+    return << "END_STYLE_SHEET";
+<style type="text/css"><!--
+$css_structure$css_tasks  --></style>
+END_STYLE_SHEET
+  }
+}
+
+# Return the HTML header:
+sub compose_html_header {
+  my ($NAME, $VERSION) = (NAME, VERSION);
+
+  # Initialize required variables:
+  my $style_sheet      = compose_style_sheet() || "\n";
+  my $timestamp        = localtime(time);
+
+  # Return the HTML document beginning:
+  return << "END_HTML_HEADER";
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+                      "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=$encoding">
+  <meta name="Generator" content="$NAME $VERSION">
+  <meta name="Date" content="$timestamp">
+  $style_sheet  <title>$heading</title>
+</head>
+
+<body>
+
+<div id="wrapper">
+
+<div id="heading">
+  <table>
+    <tr>
+      <td>
+        <h1><a href="#">$heading</a></h1>
+        $timestamp
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div id="content">
+
+END_HTML_HEADER
+}
+
+# Return the HTML footer:
+sub compose_html_footer {
+  my ($NAME, $VERSION) = (NAME, VERSION);
+
+  # Return the HTML document closing:
+  return << "END_HTML_FOOTER";
+</div>
+
+<div id="footer">
+  Generated using <a href="http://w2do.blackened.cz/">$NAME $VERSION</a>.
+</div>
+
+</div>
+
+</body>
+</html>
+END_HTML_FOOTER
+}
+
+# Return the group header:
+sub compose_group_header {
+  my ($group, $tasks, $done) = @_;
+
+  # Prepare the group statistics:
+  my $stats = sprintf "%d task%s, %d unfinished",
+                      $tasks, (($tasks != 1) ? 's' : ''),
+                      $tasks - $done;
+
+  # Prepare the table header columns:
+  my $cols = '';
+  $cols .= "    <th class=\"todo_id\">id</th>\n" if $with_id;
+  $cols .= "    <th class=\"todo_date\">due date</th>\n" if $with_date;
+  $cols .= "    <th class=\"todo_priority\">priority</th>\n" if $with_pri;
+  $cols .= "    <th class=\"todo_state\">state</th>\n" if $with_state;
+  $cols .= "    <th class=\"todo_description\">task</th>";
+
+  # Return the group heading and the table header:
+  return << "END_GROUP_HEADER";
+<h2 class="todo_group">
+  <a name="$group">$group</a>
+  <span class="todo_stats">$stats</span>
+</h2>
+
+<table class="todo_tasks">
+  <tr>
+$cols
+  </tr>
+END_GROUP_HEADER
+}
+
+# Return the group footer:
+sub compose_group_footer {
+  # Return the table closing:
+  return "</table>\n\n";
+}
+
+# Return the task entry:
+sub compose_task_entry {
+  my ($id, $date, $priority, $state, $task) = @_;
+
+  # Decide which class the task belongs to:
+  my $class      = ($state eq 't') ? ' class="todo_finished"' : '';
+
+  # Prepare the aliases:
+  my @priorities = ('very high', 'high', 'medium', 'low', 'very low');
+  $state         = ($state eq 't') ? 'ok' : '&nbsp;';
+  $priority      = $priorities[--$priority];
+
+  # Escape reserved characters:
+  $task =~ s/&/&amp;/g;
+  $task =~ s/</&lt;/g;
+  $task =~ s/>/&gt;/g;
+
+  # Prepare the table columns:
+  my $cols = '';
+  $cols .= "    <td class=\"todo_id\">$id</td>\n" if $with_id;
+  $cols .= "    <td class=\"todo_date\">$date</td>\n" if $with_date;
+  $cols .= "    <td class=\"todo_priority\">$priority</td>\n" if $with_pri;
+  $cols .= "    <td class=\"todo_state\">$state</td>\n" if $with_state;
+  $cols .= "    <td class=\"todo_description\">$task</td>";
+
+  # Return the task entry:
+  return << "END_TASK_ENTRY";
+  <tr$class>
+$cols
+  </tr>
+END_TASK_ENTRY
+}
+
 # Display usage information:
 sub display_help {
   my $NAME = NAME;
@@ -370,186 +550,6 @@ END_VERSION
   return 1;
 }
 
-# Create a style sheet file and return the LINK element:
-sub write_style_sheet {
-  # Do not create the style sheet when writing to STDOUT:
-  return 0 if $outfile eq '-';
-
-  # Derive the style sheet file name:
-  (my $file = $outfile) =~ s/(\.html?|\.php|)$/.css/;
-
-  # Do not rewrite existing style sheet if its preservation is requested:
-  unless (-e $file && $preserve) {
-    # Open the file for writing:
-    if (open(STYLE, ">$file")) {
-      # Write the document structure related part:
-      print STYLE $css_structure unless $bare;
-
-      # Write the tasks related part:
-      print STYLE $css_tasks;
-
-      # Close the file:
-      close(STYLE);
-    }
-    else {
-      # Report failure:
-      print STDERR "Unable to write to `$file'.\n";
-
-      # Return failure:
-      return 0;
-    }
-  }
-
-  # Return the LINK element:
-  return "<link rel=\"stylesheet\" href=\"" . basename($file) .
-         "\" type=\"text/css\">\n";
-}
-
-# Return the style sheet or a LINK element pointing to it:
-sub style_sheet {
-  # Check whether to have style sheet as a separate file:
-  unless ($inline) {
-    # Return the LINK element:
-    return write_style_sheet();
-  }
-  else {
-    # Return the style sheet:
-    return << "END_STYLE_SHEET";
-<style type="text/css"><!--
-$css_structure$css_tasks  --></style>
-END_STYLE_SHEET
-  }
-}
-
-# Return the HTML header:
-sub html_header {
-  my ($NAME, $VERSION) = (NAME, VERSION);
-
-  # Initialize required variables:
-  my $style_sheet      = style_sheet() || "\n";
-  my $timestamp        = localtime(time);
-
-  # Return the HTML document beginning:
-  return << "END_HTML_HEADER";
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-                      "http://www.w3.org/TR/html4/strict.dtd">
-<html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=$encoding">
-  <meta name="Generator" content="$NAME $VERSION">
-  <meta name="Date" content="$timestamp">
-  $style_sheet  <title>$heading</title>
-</head>
-
-<body>
-
-<div id="wrapper">
-
-<div id="heading">
-  <table>
-    <tr>
-      <td>
-        <h1><a href="#">$heading</a></h1>
-        $timestamp
-      </td>
-    </tr>
-  </table>
-</div>
-
-<div id="content">
-
-END_HTML_HEADER
-}
-
-# Return the HTML footer:
-sub html_footer {
-  my ($NAME, $VERSION) = (NAME, VERSION);
-
-  # Return the HTML document closing:
-  return << "END_HTML_FOOTER";
-</div>
-
-<div id="footer">
-  Generated using <a href="http://w2do.blackened.cz/">$NAME $VERSION</a>.
-</div>
-
-</div>
-
-</body>
-</html>
-END_HTML_FOOTER
-}
-
-# Return the group header:
-sub group_header {
-  my ($group, $tasks, $done) = @_;
-
-  # Prepare the group statistics:
-  my $stats = sprintf "%d task%s, %d unfinished",
-                      $tasks, (($tasks != 1) ? 's' : ''),
-                      $tasks - $done;
-
-  # Prepare the table header columns:
-  my $cols = '';
-  $cols .= "    <th class=\"todo_id\">id</th>\n" if $with_id;
-  $cols .= "    <th class=\"todo_date\">due date</th>\n" if $with_date;
-  $cols .= "    <th class=\"todo_priority\">priority</th>\n" if $with_pri;
-  $cols .= "    <th class=\"todo_state\">state</th>\n" if $with_state;
-  $cols .= "    <th class=\"todo_description\">task</th>";
-
-  # Return the group heading and the table header:
-  return << "END_GROUP_HEADER";
-<h2 class="todo_group">
-  <a name="$group">$group</a>
-  <span class="todo_stats">$stats</span>
-</h2>
-
-<table class="todo_tasks">
-  <tr>
-$cols
-  </tr>
-END_GROUP_HEADER
-}
-
-# Return the group footer:
-sub group_footer {
-  # Return the table closing:
-  return "</table>\n\n";
-}
-
-# Return the task entry:
-sub task_entry {
-  my ($id, $date, $priority, $state, $task) = @_;
-
-  # Decide which class the task belongs to:
-  my $class      = ($state eq 't') ? ' class="todo_finished"' : '';
-
-  # Prepare the aliases:
-  my @priorities = ('very high', 'high', 'medium', 'low', 'very low');
-  $state         = ($state eq 't') ? 'ok' : '&nbsp;';
-  $priority      = $priorities[--$priority];
-
-  # Escape reserved characters:
-  $task =~ s/&/&amp;/g;
-  $task =~ s/</&lt;/g;
-  $task =~ s/>/&gt;/g;
-
-  # Prepare the table columns:
-  my $cols = '';
-  $cols .= "    <td class=\"todo_id\">$id</td>\n" if $with_id;
-  $cols .= "    <td class=\"todo_date\">$date</td>\n" if $with_date;
-  $cols .= "    <td class=\"todo_priority\">$priority</td>\n" if $with_pri;
-  $cols .= "    <td class=\"todo_state\">$state</td>\n" if $with_state;
-  $cols .= "    <td class=\"todo_description\">$task</td>";
-
-  # Return the task entry:
-  return << "END_TASK_ENTRY";
-  <tr$class>
-$cols
-  </tr>
-END_TASK_ENTRY
-}
-
 # Write items in the task list to the selected output:
 sub write_tasks {
   my $args  = shift || die 'Missing argument';
@@ -567,7 +567,7 @@ sub write_tasks {
   # Open the selected output for writing:
   if (open(FILE, ">$outfile")) {
     # Write header:
-    print(FILE html_header()) or return 0 unless $bare;
+    print(FILE compose_html_header()) or return 0 unless $bare;
 
     # Check whether the list is not empty:
     if (@data) {
@@ -581,22 +581,22 @@ sub write_tasks {
         # Write heading when group changes:
         if (lc($1) ne $group) {
           # Write group closing if opened:
-          print FILE group_footer() if $group;
+          print FILE compose_group_footer() if $group;
 
           # Translate the group name to lower case:
           $group = lc($1);
 
           # Write group beginning:
-          print FILE group_header($1, $stats->{$group}->{tasks},
-                                      $stats->{$group}->{done});
+          print FILE compose_group_header($1, $stats->{$group}->{tasks},
+                                              $stats->{$group}->{done});
         }
 
         # Write task entry:
-        print FILE task_entry($6, $2, $3, $4, $5);
+        print FILE compose_task_entry($6, $2, $3, $4, $5);
       }
 
       # Write group closing:
-      print FILE group_footer();
+      print FILE compose_group_footer();
     }
     else {
       # Report an empty list:
@@ -604,7 +604,7 @@ sub write_tasks {
     }
 
     # Write footer:
-    print FILE html_footer() unless $bare;
+    print FILE compose_html_footer() unless $bare;
 
     # Close the outpt:
     close(FILE);
