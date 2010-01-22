@@ -436,7 +436,7 @@ sub html_header {
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=$encoding">
-  <meta name="Generator" content="$NAME, $VERSION">
+  <meta name="Generator" content="$NAME $VERSION">
   <meta name="Date" content="$timestamp">
   $style_sheet  <title>$heading</title>
 </head>
