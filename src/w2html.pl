@@ -37,6 +37,7 @@ our $with_id         = 1;                          # Include ID?
 our $with_date       = 1;                          # Include due date?
 our $with_pri        = 1;                          # Include priority?
 our $with_state      = 1;                          # Include state?
+our $with_stats      = 0;                          # Include statistics?
 our $preserve        = 0;                          # Preserve style sheet?
 our $inline          = 0;                          # Embed the style sheet?
 our $bare            = 0;                          # Leave out the HTML
@@ -188,6 +189,48 @@ table.todo_tasks .todo_finished {
 
 table.todo_tasks .todo_finished:hover {
   background-color: #00ff7f;
+}
+
+table.todo_stats {
+  width: 100%;
+  margin: auto;
+}
+
+table.todo_stats tr:hover {
+  background-color: #f5f5f5;
+}
+
+table.todo_stats .todo_group {
+  width: 20%;
+  text-align: left;
+}
+
+table.todo_stats .todo_progress {
+  width: 80%;
+  text-align: left;
+  font-size: x-small;
+}
+
+table.todo_stats div.todo_greenbar {
+  margin: 0 5px 0 0;
+  float: left;
+  display: block;
+  background-color: #98fb98;
+}
+
+table.todo_stats div.todo_greenbar:hover {
+  background-color: #00ff7f;
+}
+
+table.todo_stats div.todo_bluebar {
+  margin: 0 5px 0 0;
+  float: left;
+  display: block;
+  background-color: #729fcf;
+}
+
+table.todo_stats div.todo_bluebar:hover {
+  background-color: #3465a4;
 }
 END_CSS_TASKS
 
@@ -485,6 +528,54 @@ $cols
 END_TASK_ENTRY
 }
 
+# Return the statistics header:
+sub compose_statistics_header {
+  my ($groups, $tasks, $undone) = @_;
+
+  # Prepare the overall statistics:
+  my $stats = sprintf "%d group%s, %d task%s, %d unfinished",
+                      $groups, (($groups != 1) ? 's' : ''),
+                      $tasks,  (($tasks  != 1) ? 's' : ''),
+                      $undone;
+  # Return the statistics heading and the table header:
+  return << "END_STATISTICS_HEADER";
+<h2 class="todo_group">
+  <a name="statistics">Overall Statistics</a>
+  <span class="todo_stats">$stats</span>
+</h2>
+
+<table class="todo_stats">
+END_STATISTICS_HEADER
+}
+
+# Return the statistics footer:
+sub compose_statistics_footer {
+  # Return the table closing:
+  return "</table>\n\n";
+}
+
+# Return the group statistics entry:
+sub compose_statistics_entry {
+  my ($group, $percentage, $done, $tasks, $total) = @_;
+
+  # Count the progress bar width:
+  my $width = $percentage * 2;
+
+  # Decide which class to use:
+  my $class = $total ? 'todo_bluebar' : 'todo_greenbar';
+
+  # Return the statistics entry:
+  return << "END_STATISTICS_ENTRY";
+  <tr>
+    <td class="todo_group">$group</td>
+    <td class="todo_progress">
+      <div class="$class" style="width: ${width}px;">&nbsp;</div>
+      <span title="$done from $tasks">$percentage&nbsp;%</span>
+    </td>
+  </tr>
+END_STATISTICS_ENTRY
+}
+
 # Display usage information:
 sub display_help {
   my $NAME = NAME;
@@ -558,11 +649,12 @@ sub write_tasks {
   my $stats = {};
   my @data;
 
+  # Get task list statistics:
+  my ($groups, $tasks, $undone) = get_stats($stats);
+  my  $done = $tasks - $undone;
+
   # Load matching tasks:
   load_selection(\@data, undef, $args);
-
-  # Get task list statistics:
-  get_stats($stats);
 
   # Open the selected output for writing:
   if (open(FILE, ">$outfile")) {
@@ -601,6 +693,36 @@ sub write_tasks {
     else {
       # Report an empty list:
       print FILE "<p>The task list is empty.</p>\n\n";
+    }
+
+    # Check whether to include overall statistics:
+    if ($groups && $with_stats) {
+      # Write statistics beginning:
+      print FILE compose_statistics_header($groups, $tasks, $undone);
+
+      # Process each group:
+      foreach my $group (sort (keys %$stats)) {
+        # Get the group statistics:
+        my $group_done = $stats->{$group}->{done};
+        my $group_all  = $stats->{$group}->{tasks};
+
+        # Count the percentage:
+        my $percentage = int($group_done * 100 / $group_all);
+
+        # Write the group progress entry:
+        print FILE compose_statistics_entry($group, $percentage,
+                                            $group_done, $group_all);
+      }
+
+      # Count the overall percentage:
+      my $percentage = $tasks ? int($done * 100 / $tasks) : 0;
+
+      # Write the overall progress entry:
+      print FILE compose_statistics_entry('total', $percentage, $done,
+                                          $tasks, 1);
+
+      # Write statistics closing:
+      print FILE compose_statistics_footer();
     }
 
     # Write footer:
