@@ -27,7 +27,7 @@ use Text::Wrap;
 
 # General script information:
 use constant NAME    => basename($0, '.pl');       # Script name.
-use constant VERSION => '2.3.0';                   # Script version.
+use constant VERSION => '2.3.1';                   # Script version.
 
 # General script settings:
 our $homedir         = $ENV{HOME}          || $ENV{USERPROFILE} || '.';

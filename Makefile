@@ -28,7 +28,7 @@ mandir  = $(prefix)/share/man
 man1dir = $(mandir)/man1
 
 # Additional information:
-VERSION = 2.3.0
+VERSION = 2.3.1
 
 # Make rules;  please do not edit these unless you really know what you are
 # doing:
