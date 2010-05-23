@@ -1233,7 +1233,7 @@ GetOptions(
 
   'change-all'           => sub { $action = 52 },
   'remove-all'           => sub { $action = 53 },
-  'purge-all'            => sub { $action = 54 },
+  'purge-all|clean'      => sub { $action = 54 },
 
   'undo'                 => sub { $action = 95 },
   'groups'               => sub { $action = 96 },
@@ -1491,7 +1491,7 @@ in order to take any effect.
 
 Remove all items from the task list.
 
-=item B<--purge-all>
+=item B<--purge-all>, B<--clean>
 
 Remove all finished items from the task list.
 
